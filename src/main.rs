@@ -35,7 +35,7 @@ struct ProfileManager {
 
 impl Default for ProfileManager {
     fn default() -> Self {
-        // Carico la lista dei profili di Chrome esistenti
+        // Loading existing profiles
         let profiles: ChromeProfiles = chrome::load_profile_configs();
         let selected_profile = profiles.get(0).cloned().unwrap_or_else(|| {
             ChromeProfile {
@@ -54,7 +54,7 @@ impl Default for ProfileManager {
             }
         });
 
-        // Carico la lista dei proxy
+        // Loading existing proxy configs	
         let proxy_configs: ProxiesConfig = proxy_manager::load_proxy_configs();
         let selected_proxy = proxy_configs.get(0).cloned().unwrap_or_else(|| {
             ProxyConfig {
