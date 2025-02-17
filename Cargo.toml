@@ -1,0 +1,14 @@
+[package]
+name = "rust_ws"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eframe = "0.30.0"
+lazy_static = "1.5.0"
+reqwest = { version = "0.12.12", features = ["json", "blocking"] }
+serde = { version= "1.0.217", features = ["derive"] }
+serde_json = "1.0.138"
+tokio = { version = "1.43.0",  features = ["full"] }
+tungstenite = "0.26.1"
+url = "2.5.4"

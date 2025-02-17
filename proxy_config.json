@@ -1,0 +1,34 @@
+[
+  {
+    "proxy_name": "italia",
+    "proxy_type": "http",
+    "proxy_host": "aus.360s5.com",
+    "proxy_port": "3600",
+    "proxy_username": "37032992-zone-custom-region-IT-sessid-Sw7V71wM-sessTime-15",
+    "proxy_password": "nYClnI2A"
+  },
+  {
+    "proxy_name": "francia",
+    "proxy_type": "http",
+    "proxy_host": "aus.360s5.com",
+    "proxy_port": "3600",
+    "proxy_username": "37032992-zone-custom-region-FR-sessid-v8hKeZ2W-sessTime-15",
+    "proxy_password": "nYClnI2A"
+  },
+  {
+    "proxy_name": "netherlands",
+    "proxy_type": "http",
+    "proxy_host": "aus.360s5.com",
+    "proxy_port": "3600",
+    "proxy_username": "37032992-zone-custom-region-NL-sessid-uebLDuka-sessTime-15",
+    "proxy_password": "nYClnI2A"
+  },
+  {
+    "proxy_name": "wew",
+    "proxy_type": "socks5",
+    "proxy_host": "wewe",
+    "proxy_port": "wewe",
+    "proxy_username": "we",
+    "proxy_password": "wewe"
+  }
+]
