@@ -219,14 +219,7 @@ impl eframe::App for ProfileManager {
                                 }
                                 Err(e) => self.log_message = format!("Error: {}", e),
                             };
-                            // self.open_profiles.push(profile.clone());
-                            // self.log_message = format!("Profile {} opened successfully.", profile.name);
                         }
-                        if ui.button("BOT").clicked() {
-                            let ws_url = websocket::get_ws_url(&profile.clone());
-                            println!("WebSocket URL: {:?}", ws_url);
-                        }
-                        
                     }); // horizontal
                 }
             });

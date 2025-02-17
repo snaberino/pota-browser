@@ -2,6 +2,8 @@
 
 Hello, this is a very crappy a super alpha version of an ipotetic profile manager and anti detection browser written in rust and totally open source.
 
+The aim is to mimic 
+
 ## Chrome usefull args for anti detection mode
 
 --lang
