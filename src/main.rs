@@ -16,7 +16,7 @@ fn main() -> Result<(), eframe::Error> {
     let mut options = eframe::NativeOptions::default();
     options.viewport.resizable = Some(true);
     eframe::run_native(
-        "Snab Browser",
+        "pota browser",
         options,
         Box::new(|_cc| Ok(Box::new(ProfileManager::default()))),
     )

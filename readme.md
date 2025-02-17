@@ -1,6 +1,8 @@
+# pota browser
+
 Hello, this is a very crappy a super alpha version of an ipotetic profile manager and anti detection browser written in rust and totally open source.
 
-# Chrome usefull args for anti detection mode
+## Chrome usefull args for anti detection mode
 
 --lang
 --accept-lang
@@ -30,7 +32,7 @@ Hello, this is a very crappy a super alpha version of an ipotetic profile manage
 
     Chrome will start in headless mode
     
-# TODO
+## TODO
 
 - [ ] Automatic chrome executable discovery.
 - [ ] Spoofing WebRTC (spoof Host & STUN ip correctly).

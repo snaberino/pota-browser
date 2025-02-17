@@ -65,24 +65,3 @@ pub async fn test_proxy(proxy_url: &str) -> Result<(String, String), String> {
         Err(e) => Err(e.to_string()),
     }
 }
-
-// pub fn test_proxy1(proxy_url: &str) -> Result<(String, String), String> {
-//     let client = Client::builder()
-//         .proxy(reqwest::Proxy::all(proxy_url).map_err(|e| e.to_string())?)
-//         .timeout(Duration::from_secs(10))
-//         .build()
-//         .map_err(|e| e.to_string())?;
-
-//     match client.get("https://ipinfo.io/json").send() {
-//         Ok(response) => {
-//             if let Ok(json) = response.json::<Value>() {
-//                 let ip = json["ip"].as_str().unwrap_or("Unknown IP").to_string();
-//                 let country = json["country"].as_str().unwrap_or("Unknown Country").to_string();
-//                 Ok((ip, country))
-//             } else {
-//                 Err("Errore nel parsing della risposta.".to_string())
-//             }
-//         }
-//         Err(e) => Err(e.to_string()),
-//     }
-// }
