@@ -54,6 +54,7 @@ pub async fn test_proxy(proxy_url: &str) -> Result<(String, String), String> {
     match client.get("https://ipinfo.io/json").send().await {
         Ok(response) => {
             if let Ok(json) = response.json::<Value>().await {
+                println!("{:?}", json); //debugging
                 let ip = json["ip"].as_str().unwrap_or("Unknown IP").to_string();
                 let country = json["country"].as_str().unwrap_or("Unknown Country").to_string();
                 Ok((ip, country))

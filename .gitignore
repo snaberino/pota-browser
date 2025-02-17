@@ -1,3 +1,6 @@
 /chrome_profiles
 /target
 /.vscode
+/.obsidian
+proxy_config.json
+chrome_profiles.json

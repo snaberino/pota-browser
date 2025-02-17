@@ -7,7 +7,7 @@ use serde_json::json;
 use crate::chrome::ChromeProfile;
 // use url::Url;
 
-// Function to get the WebSocket URL of the Chrome DevTools Protocol, given a specific Chrome profile
+// Function to create a WebSocket connection to the Chrome DevTools Protocol given a Chrome profile configuration.
 pub fn get_ws_url(profile: &ChromeProfile) -> Result<WebSocket<MaybeTlsStream<TcpStream>>, Error> {
     // DevTools URL
     let devtools_url = format!("http://localhost:{}/json", profile.debugging_port);
@@ -28,11 +28,10 @@ pub fn get_ws_url(profile: &ChromeProfile) -> Result<WebSocket<MaybeTlsStream<Tc
     Ok(socket)
 }
 
-
 pub fn set_proxy_cdp(profile: &ChromeProfile) -> Result<(), Error> {
-
     let mut socket = get_ws_url(&profile).unwrap();
-    // Abilita l'intercettazione delle richieste di rete per injectare l'autenticazione
+
+    // Enable the Fetch domain in order to handle requests
     let enable_fetch_cmd = json!({
         "id": 1,
         "method": "Fetch.enable",
@@ -46,7 +45,7 @@ pub fn set_proxy_cdp(profile: &ChromeProfile) -> Result<(), Error> {
     });
     socket.send(Message::Text(enable_fetch_cmd.to_string().into())).unwrap();
 
-    // Comando per navigare a una pagina
+    // I'll navigate to a website in order to trigger the proxy authentication request
     let navigate_cmd = json!({
         "id": 3,
         "method": "Page.navigate",
@@ -58,7 +57,7 @@ pub fn set_proxy_cdp(profile: &ChromeProfile) -> Result<(), Error> {
     });
     socket.send(Message::Text(navigate_cmd.to_string().into())).unwrap();
 
-    // Gestisci l'evento di autenticazione richiesta
+    // Handle the Fetch.authRequired event, will loop until the event is received and then send the credentials.
     loop {
         let msg = socket.read().expect("Errore nella lettura del messaggio");
         if let Message::Text(text) = msg {
@@ -96,4 +95,51 @@ pub fn set_proxy_cdp(profile: &ChromeProfile) -> Result<(), Error> {
         }
     }
     Ok(())
+}
+
+
+
+pub fn set_timezone_cdp(profile: &ChromeProfile) -> Result<(), Error> {
+
+    let mut socket = get_ws_url(&profile).unwrap();
+    // let set_timezone_cmd = json!({
+    //     "id": 1,
+    //     "method": "Emulation.setTimezoneOverride",
+    //     "params": {
+    //         "timezoneId": "America/Los_Angeles" // Imposta il fuso orario desiderato
+    //     }
+    // });
+    // socket.send(Message::Text(set_timezone_cmd.to_string().into())).unwrap();
+
+    // Ok(())
+    
+
+
+    // Script che sovrascrive getTimezoneOffset per restituire, ad esempio, -60 (UTC+1)
+    let script = r#"
+        (function() {
+            const originalGetTimezoneOffset = Date.prototype.getTimezoneOffset;
+            Date.prototype.getTimezoneOffset = function() {
+                return -120;
+            };
+        })();
+    "#;
+
+    // Usa serde_json per serializzare lo script in modo sicuro
+    let params = json!({ "source": script });
+    let command = json!({
+        "id": 1,
+        "method": "Page.addScriptToEvaluateOnNewDocument",
+        "params": params,
+    });
+
+    // Invia il comando al CDP
+    socket.send(Message::Text(command.to_string().into())).unwrap();
+
+    // (Opzionale) Leggi la risposta
+    if let Ok(msg) = socket.read() {
+        println!("Risposta: {}", msg);
+    }
+    Ok(())
+
 }

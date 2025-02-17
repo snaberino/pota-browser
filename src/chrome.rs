@@ -10,10 +10,8 @@ use std::sync::{Arc, Mutex};
 
 use lazy_static::lazy_static;
 
-// use tokio::runtime::Builder;
-
 use crate::proxy_manager::ProxyConfig;
-use crate::websocket::{self, set_proxy_cdp};
+use crate::websocket::set_proxy_cdp;
 
 lazy_static! {
     static ref CHROME_PROCESSES: Arc<Mutex<HashMap<String, Child>>> = Arc::new(Mutex::new(HashMap::new()));
@@ -94,9 +92,9 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
     }
 
     // Add experimental options for WebRTC
-    command.arg("--webrtc-stun-server='stun:localhost:3478'");
-    command.arg("--force-webrtc-ip-handling-policy='disable_non_proxied_udp'");
-    command.arg("--enforce-webrtc-ip-permission-check");
+    // command.arg("--webrtc-stun-server='stun:localhost:3478'");
+    // command.arg("--force-webrtc-ip-handling-policy='disable_non_proxied_udp'");
+    // command.arg("--enforce-webrtc-ip-permission-check");
     // command.arg(format!("--disable-features=NetworkService,NetworkServiceInProcess"));
 
     // Spawn the process and store it in the CHROME_PROCESSES map in order to kill it later or other operations
@@ -123,8 +121,20 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
     }
     println!("Chrome opened successfully!");
 
-    Ok(())
+    //EXPERIMENTAL
 
+    // match websocket::set_timezone_cdp(&profile){
+    //     Ok(_) => {
+    //         println!("Timezone set successfully!");
+    //     }
+    //     Err(e) => {
+    //         eprintln!("Error while setting the timezone: {}", e);
+    //     }
+    // }
+
+    // END EXPERIMENTAL
+
+    Ok(())
 }
 
 pub fn close_chrome(profile_name: &str) -> io::Result<()> {
@@ -139,16 +149,18 @@ pub fn close_chrome(profile_name: &str) -> io::Result<()> {
     Ok(())
 }
 
+
+// When creating a new profile, actually i open it headless and then close it. So the whole folder structure is created.
 pub fn create_new_profile(new_profile: ChromeProfile) -> io::Result<()> {
     println!("New path directory:{}", new_profile.path.to_str().unwrap()); //debugging
 
-    // Verifica se il profilo esiste già da sistemare
-    if new_profile.path.exists() {
-        return Err(io::Error::new(
-            io::ErrorKind::AlreadyExists,
-            format!("Il profilo '{}' esiste già.", new_profile.name),
-        ));
-    }
+    // This don't work anymore
+    // if new_profile.path.exists() {
+    //     return Err(io::Error::new(
+    //         io::ErrorKind::AlreadyExists,
+    //         format!("Il profilo '{}' esiste già.", new_profile.name),
+    //     ));
+    // }
 
     match open_chrome(new_profile.clone()) {
         Ok(_) => {
