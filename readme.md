@@ -1,42 +1,73 @@
-# pota browser
+# Pota Browser
 
-Hello, this is a very crappy a super alpha version of an ipotetic profile manager and anti detection browser written in rust and totally open source.
+Hello! This is a **very early alpha** version of a hypothetical profile manager and anti-detection browser written in Rust. It's completely open-source and experimental.
+## Join
 
-The aim is to mimic 
+- **IRC:** [irc.libera.chat #potabrowser](https://web.libera.chat/#potabrowser)  
+- **0xchat Group:** `nostr:naddr1qpqrzct9xvmnywfc8qcnyc3jx3jrvdp5xycnvde5vycrze34xguxvvtx8yckyvnrxuexzdnrx4jkzcnyv33nvc3kvycxxcny8ymx2e33vgq3wamnwvaz7tm8wfhh2urn9cc8scmgv96zucm0d5pqqqcyqqqfskqjky3kl`
 
-## Chrome usefull args for anti detection mode
+## Proxy Handling
 
---lang
---accept-lang
+Currently, proxy support is implemented by passing the `--proxy-server` argument to Chrome, which only accepts the `host:port` format. To handle authentication, username and password injection is done via Chrome DevTools Protocol (CDP).
 
-    with these two args we can override:
+WebRTC Spoofing
 
-    Worker.langs
-    Navigator.lang
+Timezone Spoofing
 
---debugging-port
+Emulation.setTimezoneOverride
+Date()
+Date().getTimezoneOffset()
+Emulation.setGeolocationOverride
 
-    In order to active di CDP port.
+Intl.DateTimeFormat() Spoofing
 
---proxy-server
+Injectin this javascript seems works.
 
-    Pass host:port of the proxy, in order to handle authetication i use injecting auth with CDP.
+```
+(function() {
+  // Save the original method
+  const originalResolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
+  
+  Intl.DateTimeFormat.prototype.resolvedOptions = function() {
+    // Get the original options
+    const options = originalResolvedOptions.apply(this, arguments);
+    // Force the timeZone value
+    options.timeZone = 'America/New_York';
+    return options;
+  };
+})();
 
---user-data-dir
-    
-    Set a path for a new chrome folder, inside that one could be possibile make others profiles. Like a normal Chrome.
+```
+## Useful Chrome Arguments for Anti-Detection Mode
 
---no-first-run
+- **`--lang`** & **`--accept-lang`**  
+  - These arguments override:  
+    - `Worker.langs`  
+    - `Navigator.lang`
 
-    This will open Chrome straight to operative status, avoiding initial popups for new profiles.
+- **`--debugging-port`**  
+  - Enables the Chrome DevTools Protocol (CDP) port.
 
---headless
+- **`--proxy-server`**  
+  - Passes the proxy as `host:port`. Authentication is handled via CDP injection.
 
-    Chrome will start in headless mode
-    
+- **`--user-data-dir`**  
+  - Specifies a path for a new Chrome profile folder. Multiple profiles can be created inside this directory, similar to standard Chrome behavior.
+
+- **`--no-first-run`**  
+  - Launches Chrome directly without showing the first-run setup prompts.
+
+- **`--headless`**  
+  - Runs Chrome in headless mode (no graphical interface).
+
+- **`--webrtc-ip-handling-policy`**  
+  - Override WebRTC IP handling policy to mimic the behavior when WebRTC IP handling policy is specified in Preferences.
+
+- **`--force-webrtc-ip-handling-policy`**  
+  - Override WebRTC IP handling policy to mimic the behavior when WebRTC IP handling policy is specified in Preferences.
 ## TODO
 
-- [ ] Automatic chrome executable discovery.
-- [ ] Spoofing WebRTC (spoof Host & STUN ip correctly).
-- [ ] All navigator properties (device, OS, hardware, browser, etc.)
-- [ ] Screen size, resolution, window, & viewport properties.
+- [ ] Automatic Chrome executable discovery.  
+- [ ] WebRTC spoofing (correctly spoof host & STUN IP).  
+- [ ] Spoofing all `navigator` properties (device, OS, hardware, browser, etc.).  
+- [ ] Screen size, resolution, window, and viewport property spoofing.  

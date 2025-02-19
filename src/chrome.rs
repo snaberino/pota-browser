@@ -11,7 +11,7 @@ use std::sync::{Arc, Mutex};
 use lazy_static::lazy_static;
 
 use crate::proxy_manager::ProxyConfig;
-use crate::websocket::set_proxy_cdp;
+use crate::websocket;
 
 lazy_static! {
     static ref CHROME_PROCESSES: Arc<Mutex<HashMap<String, Child>>> = Arc::new(Mutex::new(HashMap::new()));
@@ -105,14 +105,14 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
             if profile.proxy.proxy_name != "" {
                 println!("Setting proxy...");
                 // If the process spawn correctly, set the proxy
-                match set_proxy_cdp(&profile) {
+                match websocket::set_proxy_cdp(&profile) {
                     Ok(_) => {
                         println!("Proxy set successfully!");
                     }
                     Err(e) => {
                         eprintln!("Error while setting the proxy: {}", e);
+                    }
                 }
-            }
             }
         }
         Err(e) => {
@@ -123,14 +123,14 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
 
     //EXPERIMENTAL
 
-    // match websocket::set_timezone_cdp(&profile){
-    //     Ok(_) => {
-    //         println!("Timezone set successfully!");
-    //     }
-    //     Err(e) => {
-    //         eprintln!("Error while setting the timezone: {}", e);
-    //     }
-    // }
+    match websocket::set_timezone_cdp(&profile){
+        Ok(_) => {
+            println!("Timezone set successfully!");
+        }
+        Err(e) => {
+            eprintln!("Error while setting the timezone: {}", e);
+        }
+    }
 
     // END EXPERIMENTAL
 

@@ -8,7 +8,7 @@ use crate::chrome::ChromeProfile;
 // use url::Url;
 
 // Function to create a WebSocket connection to the Chrome DevTools Protocol given a Chrome profile configuration.
-pub fn get_ws_url(profile: &ChromeProfile) -> Result<WebSocket<MaybeTlsStream<TcpStream>>, Error> {
+fn get_socket(profile: &ChromeProfile) -> Result<WebSocket<MaybeTlsStream<TcpStream>>, Error> {
     // DevTools URL
     let devtools_url = format!("http://localhost:{}/json", profile.debugging_port);
 
@@ -29,7 +29,7 @@ pub fn get_ws_url(profile: &ChromeProfile) -> Result<WebSocket<MaybeTlsStream<Tc
 }
 
 pub fn set_proxy_cdp(profile: &ChromeProfile) -> Result<(), Error> {
-    let mut socket = get_ws_url(&profile).unwrap();
+    let mut socket = get_socket(&profile).unwrap();
 
     // Enable the Fetch domain in order to handle requests
     let enable_fetch_cmd = json!({
@@ -97,49 +97,54 @@ pub fn set_proxy_cdp(profile: &ChromeProfile) -> Result<(), Error> {
     Ok(())
 }
 
-
-
 pub fn set_timezone_cdp(profile: &ChromeProfile) -> Result<(), Error> {
 
-    let mut socket = get_ws_url(&profile).unwrap();
-    // let set_timezone_cmd = json!({
-    //     "id": 1,
-    //     "method": "Emulation.setTimezoneOverride",
-    //     "params": {
-    //         "timezoneId": "America/Los_Angeles" // Imposta il fuso orario desiderato
-    //     }
-    // });
-    // socket.send(Message::Text(set_timezone_cmd.to_string().into())).unwrap();
-
-    // Ok(())
-    
-
-
-    // Script che sovrascrive getTimezoneOffset per restituire, ad esempio, -60 (UTC+1)
-    let script = r#"
-        (function() {
-            const originalGetTimezoneOffset = Date.prototype.getTimezoneOffset;
-            Date.prototype.getTimezoneOffset = function() {
-                return -120;
-            };
-        })();
-    "#;
-
-    // Usa serde_json per serializzare lo script in modo sicuro
-    let params = json!({ "source": script });
-    let command = json!({
+    let mut socket = get_socket(&profile).unwrap();
+    let set_timezone_cmd = json!({
         "id": 1,
-        "method": "Page.addScriptToEvaluateOnNewDocument",
-        "params": params,
+        "method": "Emulation.setTimezoneOverride",
+        "params": {
+            "timezoneId": "Europe/Madrid" // Imposta il fuso orario desiderato
+        }
     });
-
-    // Invia il comando al CDP
-    socket.send(Message::Text(command.to_string().into())).unwrap();
-
-    // (Opzionale) Leggi la risposta
-    if let Ok(msg) = socket.read() {
-        println!("Risposta: {}", msg);
+    socket.send(Message::Text(set_timezone_cmd.to_string().into())).unwrap();
+    // Read the response message
+    let msg = socket.read().expect("Errore nella lettura del messaggio");
+    if let Message::Text(text) = msg {
+        println!("Messaggio ricevuto: {}", text);
     }
+
+
+    // Inject the JavaScript code
+    let inject_js_cmd = json!({
+        "id": 2,
+        "method": "Page.addScriptToEvaluateOnNewDocument",
+        "params": {
+            "source": r#"
+                (function() {
+                    // Save the original method
+                    const originalResolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
+                    
+                    Intl.DateTimeFormat.prototype.resolvedOptions = function() {
+                        // Get the original options
+                        const options = originalResolvedOptions.apply(this, arguments);
+                        // Force the timeZone value
+                        options.timeZone = 'Europe/Madrid';
+                        return options;
+                    };
+                })();
+            "#
+        }
+    });
+    socket.send(Message::Text(inject_js_cmd.to_string().into())).unwrap();
+
+    // Read the response message for the injected JS
+    let msg = socket.read().expect("Errore nella lettura del messaggio");
+    if let Message::Text(text) = msg {
+        println!("Messaggio ricevuto: {}", text);
+    }
+
+
     Ok(())
 
 }
