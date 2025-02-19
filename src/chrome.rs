@@ -91,6 +91,7 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
         ));
     }
 
+    // EXPERIMENTAL
     // Add experimental options for WebRTC
     
     // command.arg("--webrtc-stun-server='stun:localhost:3478'");
@@ -98,6 +99,8 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
     // command.arg("--enforce-webrtc-ip-permission-check");
     // command.arg(format!("--disable-features=NetworkService,NetworkServiceInProcess"));
 
+    // END EXPERIMENTAL
+    
     // Spawn the process and store it in the CHROME_PROCESSES map in order to kill it later or other operations
     match command.spawn() {
         Ok(child) => {
@@ -149,7 +152,6 @@ pub fn close_chrome(profile_name: &str) -> io::Result<()> {
     }
     Ok(())
 }
-
 
 // When creating a new profile, actually i open it headless and then close it. So the whole folder structure is created.
 pub fn create_new_profile(new_profile: ChromeProfile) -> io::Result<()> {

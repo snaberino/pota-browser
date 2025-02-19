@@ -14,6 +14,12 @@ Currently, proxy support is implemented by passing the `--proxy-server` argument
 
 ### WebRTC Spoofing
 
+Need to implement several types of spoofing and blocking IP detection via WebRTC. See 
+
+- **block**: completely disables WebRTC functionality.
+- **default**: spoofing and blocking IP detection via WebRTC is disabled. But if the site uses WebRTC, you will see a message about it.
+- fake: allow to spoof the external IP address returned by STUN servers.
+
 ### Timezone Spoofing
 
 Emulation.setTimezoneOverride
@@ -70,9 +76,8 @@ Injectin this javascript seems works.
 - **`--force-webrtc-ip-handling-policy`**  
   - Override WebRTC IP handling policy to mimic the behavior when WebRTC IP handling policy is specified in Preferences.
 
-- **`--enable-webrtc-hide-local-ips-with-mdns`**  DEPRECATED
+- **`--enable-webrtc-hide-local-ips-with-mdns`** Localhost IP
   - Starting from a recent version (around Chrome 92), the feature to hide local IP addresses via mDNS is enabled by default.
-
 
 ## TODO
 
@@ -80,3 +85,7 @@ Injectin this javascript seems works.
 - [ ] WebRTC spoofing (correctly spoof host & STUN IP).  
 - [ ] Spoofing all `navigator` properties (device, OS, hardware, browser, etc.).  
 - [ ] Screen size, resolution, window, and viewport property spoofing.  
+
+## References
+
+1: https://chebrowser.site/doc/en/profiles.html#webrtc-settings
