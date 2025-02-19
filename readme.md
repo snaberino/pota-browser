@@ -70,7 +70,7 @@ Injectin this javascript seems works.
 - **`--force-webrtc-ip-handling-policy`**  
   - Override WebRTC IP handling policy to mimic the behavior when WebRTC IP handling policy is specified in Preferences.
 
-- - **`--enable-webrtc-hide-local-ips-with-mdns`**  DEPRECATED
+- **`--enable-webrtc-hide-local-ips-with-mdns`**  DEPRECATED
   - Starting from a recent version (around Chrome 92), the feature to hide local IP addresses via mDNS is enabled by default.
 
 
