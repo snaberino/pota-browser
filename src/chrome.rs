@@ -95,6 +95,7 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
     // Add experimental options for WebRTC
     
     // command.arg("--webrtc-stun-server='stun:localhost:3478'");
+    command.arg("--webrtc-ip-handling-policy=disable_non_proxied_udp");
     command.arg("--force-webrtc-ip-handling-policy");
     // command.arg("--enforce-webrtc-ip-permission-check");
     // command.arg(format!("--disable-features=NetworkService,NetworkServiceInProcess"));

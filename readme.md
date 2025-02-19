@@ -14,9 +14,10 @@ Currently, proxy support is implemented by passing the `--proxy-server` argument
 
 ### WebRTC Spoofing
 
-Need to implement several types of spoofing and blocking IP detection via WebRTC. See 
+Need to implement several types of spoofing and blocking IP detection via WebRTC. See [[#^b11322]]
 
 - **block**: completely disables WebRTC functionality.
+  That mode will block totally WebRTC, with two args [[#^539353]] [[#^cc513e]]
 - **default**: spoofing and blocking IP detection via WebRTC is disabled. But if the site uses WebRTC, you will see a message about it.
 - fake: allow to spoof the external IP address returned by STUN servers.
 
@@ -70,10 +71,10 @@ Injectin this javascript seems works.
 
 ### WebRTC args
 
-- **`--webrtc-ip-handling-policy`**  
-  - Override WebRTC IP handling policy to mimic the behavior when WebRTC IP handling policy is specified in Preferences.
+- **`--webrtc-ip-handling-policy=disable_non_proxied_udp`**   ^539353
+  - Override WebRTC IP handling policy, plus **`--force-webrtc-ip-handling-policy`** will disable WebRTC.
 
-- **`--force-webrtc-ip-handling-policy`**  
+- **`--force-webrtc-ip-handling-policy`**   ^cc513e
   - Override WebRTC IP handling policy to mimic the behavior when WebRTC IP handling policy is specified in Preferences.
 
 - **`--enable-webrtc-hide-local-ips-with-mdns`** Localhost IP
@@ -88,4 +89,4 @@ Injectin this javascript seems works.
 
 ## References
 
-1: https://chebrowser.site/doc/en/profiles.html#webrtc-settings
+1: https://chebrowser.site/doc/en/profiles.html#webrtc-settings ^b11322
