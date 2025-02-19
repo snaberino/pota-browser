@@ -10,16 +10,18 @@ Hello! This is a **very early alpha** version of a hypothetical profile manager 
 
 Currently, proxy support is implemented by passing the `--proxy-server` argument to Chrome, which only accepts the `host:port` format. To handle authentication, username and password injection is done via Chrome DevTools Protocol (CDP).
 
-WebRTC Spoofing
+## Spoofing things
 
-Timezone Spoofing
+### WebRTC Spoofing
+
+### Timezone Spoofing
 
 Emulation.setTimezoneOverride
 Date()
 Date().getTimezoneOffset()
 Emulation.setGeolocationOverride
 
-Intl.DateTimeFormat() Spoofing
+#### Intl.DateTimeFormat() Spoofing
 
 Injectin this javascript seems works.
 
@@ -60,11 +62,18 @@ Injectin this javascript seems works.
 - **`--headless`**  
   - Runs Chrome in headless mode (no graphical interface).
 
+### WebRTC args
+
 - **`--webrtc-ip-handling-policy`**  
   - Override WebRTC IP handling policy to mimic the behavior when WebRTC IP handling policy is specified in Preferences.
 
 - **`--force-webrtc-ip-handling-policy`**  
   - Override WebRTC IP handling policy to mimic the behavior when WebRTC IP handling policy is specified in Preferences.
+
+- - **`--enable-webrtc-hide-local-ips-with-mdns`**  DEPRECATED
+  - Starting from a recent version (around Chrome 92), the feature to hide local IP addresses via mDNS is enabled by default.
+
+
 ## TODO
 
 - [ ] Automatic Chrome executable discovery.  
