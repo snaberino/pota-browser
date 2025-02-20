@@ -62,18 +62,18 @@ Emulation.setGeolocationOverride
 
 Injectin this javascript seems works.
 
-(function() {
-  // Save the original method
-  const originalResolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
+`(function() {`
+  `// Save the original method`
+  `const originalResolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;`
   
-  Intl.DateTimeFormat.prototype.resolvedOptions = function() {
-    // Get the original options
-    const options = originalResolvedOptions.apply(this, arguments);
-    // Force the timeZone value
-    options.timeZone = 'America/New_York';
-    return options;
-  };
-})();
+  `Intl.DateTimeFormat.prototype.resolvedOptions = function() {`
+    `// Get the original options`
+    `const options = originalResolvedOptions.apply(this, arguments);`
+    `// Force the timeZone value`
+    `options.timeZone = 'America/New_York';`
+    `return options;`
+  `};`
+`})();`
 
 ## Useful Chrome Arguments for Anti-Detection Mode
 
