@@ -1,11 +1,18 @@
 # Pota Browser
 
 Hello! This is a **very early alpha** version of a hypothetical profile manager and anti-detection browser written in Rust. It's completely open-source and experimental.
+
+## 🚧 Still a Work in Progress!
+
+I’m actively developing Pota Browser, and there’s still a lot to do. If you’re curious, feel free to check out the repo, test it out, and let me know what you think. **Bug reports, feature ideas, and contributions are more than welcome!** 🙌
 ## Join
 
 - **IRC:** [irc.libera.chat #potabrowser](https://web.libera.chat/#potabrowser)  
 - **0xchat Group:** `nostr:naddr1qpqrzct9xvmnywfc8qcnyc3jx3jrvdp5xycnvde5vycrze34xguxvvtx8yckyvnrxuexzdnrx4jkzcnyv33nvc3kvycxxcny8ymx2e33vgq3wamnwvaz7tm8wfhh2urn9cc8scmgv96zucm0d5pqqqcyqqqfskqjky3kl`
 
+## Spoofing user agent
+
+**`--user-agent="custom_user_agent"`** this method changes the UA string in the HTTPS header, but it might not alter all JavaScript-exposed properties.
 ## Proxy Handling
 
 Currently, proxy support is implemented by passing the `--proxy-server` argument to Chrome, which only accepts the `host:port` format. To handle authentication, username and password injection is done via Chrome DevTools Protocol (CDP).
@@ -14,11 +21,13 @@ Currently, proxy support is implemented by passing the `--proxy-server` argument
 
 ### WebRTC Spoofing
 
-Need to implement several types of spoofing and blocking IP detection via WebRTC. See [[#References]]
+Need to implement several types of spoofing and blocking IP detection via WebRTC.
 
 - **block**: completely disables WebRTC functionality.
   That mode will block totally WebRTC, with **`--webrtc-ip-handling-policy=disable_non_proxied_udp`** and **`--force-webrtc-ip-handling-policy`**
+
 - **default**: spoofing and blocking IP detection via WebRTC is disabled. But if the site uses WebRTC, you will see a message about it.
+
 - fake: allow to spoof the external IP address returned by STUN servers.
 
 ### Timezone Spoofing
@@ -65,16 +74,20 @@ Injectin this javascript seems works.
 
 - **`--no-first-run`**  
   - Launches Chrome directly without showing the first-run setup prompts.
+- --no-default-browser-check
+
+- **`--no-default-browser-check`**  
+  - Launches Chrome directly without showing the first-run setup prompts.
 
 - **`--headless`**  
   - Runs Chrome in headless mode (no graphical interface).
 
 ### WebRTC args
 
-- **`--webrtc-ip-handling-policy=disable_non_proxied_udp`**   ^539353
+- **`--webrtc-ip-handling-policy=disable_non_proxied_udp`**  
   - Override WebRTC IP handling policy, plus **`--force-webrtc-ip-handling-policy`** will disable WebRTC.
 
-- **`--force-webrtc-ip-handling-policy`**   ^cc513e
+- **`--force-webrtc-ip-handling-policy`**  
   - Override WebRTC IP handling policy to mimic the behavior when WebRTC IP handling policy is specified in Preferences.
 
 - **`--enable-webrtc-hide-local-ips-with-mdns`** Localhost IP
@@ -83,10 +96,10 @@ Injectin this javascript seems works.
 ## TODO
 
 - [ ] Automatic Chrome executable discovery.  
-- [ ] WebRTC spoofing (correctly spoof host & STUN IP).  
+- [ ] WebRTC **fake** spoofing (correctly spoof host & STUN IP).  
 - [ ] Spoofing all `navigator` properties (device, OS, hardware, browser, etc.).  
 - [ ] Screen size, resolution, window, and viewport property spoofing.  
 
 ## References
 
-1: https://chebrowser.site/doc/en/profiles.html#webrtc-settings ^b11322
+1: https://chebrowser.site/doc/en/profiles.html#webrtc-settings

@@ -25,6 +25,7 @@ pub struct ChromeProfile {
     pub debugging_port : u16,
     pub headless: bool,
     pub proxy: ProxyConfig,
+    pub webrtc: String
 }
 
 pub type ChromeProfiles = Vec<ChromeProfile>;
@@ -69,11 +70,20 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
     println!("Opening a new Chrome profile in this directory: {}", profile.path.to_str().unwrap()); //debugging
 
     // Full path to the Chrome executable, to enhance compatibility for other OSs
-    let chrome_path = r"C:\Program Files\Google\Chrome\Application\chrome.exe";
+    let chrome_path = if cfg!(target_os = "windows") {
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+    } else if cfg!(target_os = "macos") {
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    } else if cfg!(target_os = "linux") {
+        "/usr/bin/google-chrome"
+    } else {
+        return Err(io::Error::new(io::ErrorKind::NotFound, "Unsupported OS"));
+    };
 
     let mut command = Command::new(chrome_path);
     command.arg(format!("--user-data-dir={}", profile.path.to_str().unwrap()));
     command.arg("--no-first-run");
+    command.arg("--no-default-browser-check");
     // Add remote debugging if debugging_port is not 0
     if profile.debugging_port != 0 {
         command.arg(format!("--remote-debugging-port={}", profile.debugging_port));
@@ -92,11 +102,13 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
     }
 
     // EXPERIMENTAL
+    if profile.webrtc == "block" {
+        command.arg("--webrtc-ip-handling-policy=disable_non_proxied_udp");
+        command.arg("--force-webrtc-ip-handling-policy");
+    }
     // Add experimental options for WebRTC
     
     // command.arg("--webrtc-stun-server='stun:localhost:3478'");
-    command.arg("--webrtc-ip-handling-policy=disable_non_proxied_udp");
-    command.arg("--force-webrtc-ip-handling-policy");
     // command.arg("--enforce-webrtc-ip-permission-check");
     // command.arg(format!("--disable-features=NetworkService,NetworkServiceInProcess"));
 

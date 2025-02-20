@@ -26,11 +26,11 @@ struct ProfileManager {
     profiles: ChromeProfiles,
     open_profiles: ChromeProfiles,
     selected_profile: ChromeProfile,
-    new_profile_name: String, // Per creare nuovi profili
+    new_profile_name: String, // Need it in order to create a new profile
     proxy_configs: ProxiesConfig,
     proxy : ProxyConfig,
     selected_proxy: ProxyConfig,
-    log_message : String, // Per rederizzare i messaggi di errore o successo, sulla GUI. Adotto un solo elemento della gui per stampare tutti i messaggi per l'utente.
+    log_message : String, // Render log messages
 }
 
 impl Default for ProfileManager {
@@ -50,7 +50,11 @@ impl Default for ProfileManager {
                     proxy_port: String::new(),
                     proxy_username: String::new(),
                     proxy_password: String::new(),
+
+                    last_ip: String::new(),
+                    used_ips: vec![],
                 },
+                webrtc: String::new(),
             }
         });
 
@@ -64,6 +68,9 @@ impl Default for ProfileManager {
                 proxy_port: "port".to_string(),
                 proxy_username: "username".to_string(),
                 proxy_password: "password".to_string(),
+
+                last_ip: String::new(),
+                used_ips: vec![],
             }
         });
 
@@ -80,6 +87,9 @@ impl Default for ProfileManager {
                 proxy_port: String::new(),
                 proxy_username: String::new(),
                 proxy_password: String::new(),
+
+                last_ip: String::new(),
+                used_ips: vec![],
             },
             selected_proxy,
             log_message: String::new(),
@@ -114,7 +124,11 @@ impl eframe::App for ProfileManager {
                                 proxy_port: String::new(),
                                 proxy_username: String::new(),
                                 proxy_password: String::new(),
+
+                                last_ip: String::new(),
+                                used_ips: vec![],
                             },
+                            webrtc: String::new(),
                         };
                         self.profiles.push(new_profile.clone());
                         match chrome::create_new_profile(new_profile.clone()) {
@@ -181,6 +195,20 @@ impl eframe::App for ProfileManager {
                         chrome::save_profile_configs(&self.profiles);
                         self.log_message = format!("Headless mode for profile {} set to {}.", self.selected_profile.name, self.selected_profile.headless);
                     }
+                    // Dropdown menu for WebRTC IP handling
+                    ui.label("WebRTC Spoofing:");
+                    egui::ComboBox::from_id_salt(egui::Id::new("webrtc_spoofing_selector"))
+                        .selected_text(&self.selected_profile.webrtc)
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(&mut self.selected_profile.webrtc, "default".to_string(), "default");
+                            ui.selectable_value(&mut self.selected_profile.webrtc, "fake".to_string(), "fake");
+                            ui.selectable_value(&mut self.selected_profile.webrtc, "block".to_string(), "block");
+                        });
+                    if let Some(profile) = self.profiles.iter_mut().find(|p| p.name == self.selected_profile.name) {
+                        profile.webrtc = self.selected_profile.webrtc.clone();
+                    }
+                    chrome::save_profile_configs(&self.profiles);
+                    self.log_message = format!("WebRTC spoofing for profile {} set to {}.", self.selected_profile.name, self.selected_profile.webrtc);
                 }
             }); //  horizontal
 
@@ -309,6 +337,15 @@ impl eframe::App for ProfileManager {
                             self.log_message = format!("Error: {}", e);
                         }
                     }
+
+                    // match proxy_manager::test_proxy1(&mut self.proxy, &mut self.proxy_configs).await {
+                    //     Ok((ip, country)) => {
+                    //         self.log_message = format!("IP: {}, Country: {}", ip, country);
+                    //     }
+                    //     Err(e) => {
+                    //         self.log_message = format!("Error: {}", e);
+                    //     }
+                    // }
                 });
             }
 
@@ -321,6 +358,9 @@ impl eframe::App for ProfileManager {
                         proxy_port: self.proxy.proxy_port.clone(),
                         proxy_username: self.proxy.proxy_username.clone(),
                         proxy_password: self.proxy.proxy_password.clone(),
+
+                        last_ip: String::new(),
+                        used_ips: vec![],
                     }
                 );
                 proxy_manager::save_proxy_configs(&self.proxy_configs);
@@ -377,7 +417,7 @@ impl eframe::App for ProfileManager {
                 ui.vertical(|ui| {
                     ui.label("Test");
                     for proxy in &mut proxy_configs {
-                        if ui.button("Test Proxy").clicked() {
+                        if ui.button("CHECK").clicked() {
                             let proxy_url = format!(
                                 "{}://{}:{}@{}:{}",
                                 proxy.proxy_type,
@@ -390,12 +430,29 @@ impl eframe::App for ProfileManager {
             
                             let rt = Builder::new_current_thread().enable_all().build().unwrap();
                             rt.block_on(async {
-                                match proxy_manager::test_proxy(&proxy_url).await {
-                                    Ok((ip, country)) => {
-                                        self.log_message = format!("IP: {}, Country: {}", ip, country);
+                                // match proxy_manager::test_proxy(&proxy_url).await {
+                                //     Ok((ip, country)) => {
+                                //         self.log_message = format!("IP: {}, Country: {}", ip, country);
+                                //     }
+                                //     Err(e) => {
+                                //         self.log_message = format!("Errore: {}", e);
+                                //     }
+                                // }
+
+
+                                match proxy_manager::test_proxy1(proxy).await {
+                                    Ok(updated_proxy_config ) => {
+                                        println!("Proxy updated: {:?}", updated_proxy_config);
+                                        if let Some(existing_proxy) = self.proxy_configs.iter_mut().find(|p| p.proxy_name == updated_proxy_config.proxy_name) {
+                                            *existing_proxy = updated_proxy_config.clone();
+                                            proxy_manager::save_proxy_configs(&self.proxy_configs);
+                                            self.log_message = format!("Proxy {} updated successfully.", updated_proxy_config.proxy_name);
+                                        } else {
+                                            self.log_message = format!("Error: Proxy {} not found.", updated_proxy_config.proxy_name);
+                                        }
                                     }
                                     Err(e) => {
-                                        self.log_message = format!("Errore: {}", e);
+                                        self.log_message = format!("Error: {}", e);
                                     }
                                 }
                             });
