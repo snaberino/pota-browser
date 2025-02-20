@@ -1,11 +1,12 @@
 use std::net::TcpStream;
-
 use reqwest::Error;
+
+use tokio::task;
+
 use tungstenite::{connect, WebSocket, Message, stream::MaybeTlsStream};
 use serde_json::json;
 
 use crate::chrome::ChromeProfile;
-// use url::Url;
 
 // Function to create a WebSocket connection to the Chrome DevTools Protocol given a Chrome profile configuration.
 fn get_socket(profile: &ChromeProfile) -> Result<WebSocket<MaybeTlsStream<TcpStream>>, Error> {
@@ -52,7 +53,8 @@ pub fn set_proxy_cdp(profile: &ChromeProfile) -> Result<(), Error> {
         "params": {
             // "url": "https://abrahamjuliot.github.io/creepjs/"
             // "url": "https://ipscore.io/"
-            "url": "https://www.browserscan.net"
+            // "url": "https://www.browserscan.net"
+            "url": "https://browserleaks.com/client-hints"
         }
     });
     socket.send(Message::Text(navigate_cmd.to_string().into())).unwrap();
@@ -87,7 +89,7 @@ pub fn set_proxy_cdp(profile: &ChromeProfile) -> Result<(), Error> {
                     "id": 4,
                     "method": "Fetch.continueRequest",
                     "params": {
-                        "requestId": response["params"]["requestId"]
+                        "requestId": response["params"]["requestId"],
                     }
                 });
                 socket.send(Message::Text(continue_request.to_string().into())).unwrap();
@@ -147,4 +149,100 @@ pub fn set_timezone_cdp(profile: &ChromeProfile) -> Result<(), Error> {
 
     Ok(())
 
+}
+
+
+
+
+
+
+
+
+async fn get_socket1(profile: ChromeProfile) -> Result<WebSocket<MaybeTlsStream<TcpStream>>, Error> {
+    // DevTools URL
+    let devtools_url = format!("http://localhost:{}/json", profile.debugging_port);
+
+    // Retrieve the list of pages
+    let response = reqwest::get(&devtools_url).await?;
+    let pages: Vec<serde_json::Value> = response.json().await?;
+
+    // Retrieve the WebSocket URL of the first page
+    let websocket_url = pages[0]["webSocketDebuggerUrl"].as_str().unwrap();
+    println!("WebSocket URL: {}", websocket_url);
+    let (socket, _) = connect(websocket_url).expect("errore");
+    Ok(socket)
+}
+
+async fn start_cdp(profile: ChromeProfile) -> Result<(), Error> {
+    let mut socket = get_socket1(profile).await.unwrap();
+    let enable_fetch_cmd = json!({
+        "id": 1,
+        "method": "Fetch.enable",
+        "params": {
+            "patterns": [{
+                "urlPattern": "*",
+                "requestStage": "Request",
+            }],
+            "handleAuthRequests": true
+        }
+    });
+    socket.send(Message::Text(enable_fetch_cmd.to_string().into())).unwrap();
+    let navigate_cmd = json!( {
+        "id": 3,
+        "method": "Page.navigate",
+        "params": {
+            "url": "https://browserleaks.com/client-hints"
+        }
+    });
+    socket.send(Message::Text(navigate_cmd.to_string().into())).unwrap();
+
+    // Listen indefinitely for incoming messages
+    loop {
+        let msg = socket.read().expect("Errore nella lettura del messaggio");
+        if let Message::Text(text) = msg {
+            println!("Messaggio ricevuto: {}", text);
+            let response: serde_json::Value = serde_json::from_str(&text).unwrap();
+            if response["method"] == "Fetch.authRequired" {
+                println!("Evento Fetch.authRequired ricevuto");
+                // let auth_challenge_response = json!({
+                //     "id": 2,
+                //     "method": "Fetch.continueWithAuth",
+                //     "params": {
+                //         "requestId": response["params"]["requestId"],
+                //         "authChallengeResponse": {
+                //             "response": "ProvideCredentials",
+                //             "username": profile.proxy.proxy_username.clone(),
+                //             "password": profile.proxy.proxy_password.clone()
+                //         }
+                //     }
+                // });
+                // socket.send(Message::Text(auth_challenge_response.to_string().into())).unwrap();
+            } else if response["method"] == "Fetch.requestPaused" {
+                println!("Evento Fetch.requestPaused ricevuto");
+                let continue_request = json!({
+                    "id": 4,
+                    "method": "Fetch.continueRequest",
+                    "params": {
+                        "requestId": response["params"]["requestId"],
+                        "headers": [
+                            { "name": "Accept-Encoding", "value": "br, gzip, deflate" },
+                            { "name": "Sec-CH-UA", "value": "\"Chromium\";v=\"116\", \"Google Chrome\";v=\"116\", \";Not A Brand\";v=\"99\"" },
+                            { "name": "Sec-CH-UA-Platform", "value": "\"MacOS\"" },
+                          ]
+                    }
+                });
+                socket.send(Message::Text(continue_request.to_string().into())).unwrap();
+            }
+        }
+    }
+
+    // Ok(())
+}
+
+pub fn start_cdp_listener(profile: ChromeProfile) {
+    task::spawn(async move {
+        if let Err(e) = start_cdp(profile).await {
+            eprintln!("Errore durante l'ascolto del Chrome DevTools Protocol: {}", e);
+        }
+    });
 }

@@ -102,23 +102,29 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
     }
 
     // EXPERIMENTAL
+
     if profile.webrtc == "block" {
         command.arg("--webrtc-ip-handling-policy=disable_non_proxied_udp");
         command.arg("--force-webrtc-ip-handling-policy");
     }
+
+    command.arg("--user-agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36'");
     // Add experimental options for WebRTC
-    
     // command.arg("--webrtc-stun-server='stun:localhost:3478'");
     // command.arg("--enforce-webrtc-ip-permission-check");
     // command.arg(format!("--disable-features=NetworkService,NetworkServiceInProcess"));
 
-    // END EXPERIMENTAL
-    
     // Spawn the process and store it in the CHROME_PROCESSES map in order to kill it later or other operations
     match command.spawn() {
         Ok(child) => {
             let mut processes = CHROME_PROCESSES.lock().unwrap();
             processes.insert(profile.name.clone(), child);
+
+            // Trying new way to connecto to Chrome DevTools Protocol
+
+            websocket::start_cdp_listener(profile.clone());
+
+            // Set the proxy if it's configured
             if profile.proxy.proxy_name != "" {
                 println!("Setting proxy...");
                 // If the process spawn correctly, set the proxy
@@ -137,8 +143,6 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
         }
     }
     println!("Chrome opened successfully!");
-
-    //EXPERIMENTAL
 
     // match websocket::set_timezone_cdp(&profile){
     //     Ok(_) => {
