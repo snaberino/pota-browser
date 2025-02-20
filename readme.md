@@ -75,7 +75,6 @@ Injectin this javascript seems works.
   };
 })();
 
-```
 ## Useful Chrome Arguments for Anti-Detection Mode
 
 - **`--lang`** & **`--accept-lang`**  
