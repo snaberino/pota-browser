@@ -173,6 +173,12 @@ async fn get_socket1(profile: ChromeProfile) -> Result<WebSocket<MaybeTlsStream<
     Ok(socket)
 }
 
+// We now start a process that listens for incoming messages and handles them accordingly.
+// Using Chrome DevTools Protocol, we enable the Fetch domain in order to fetch every request made by the browser.
+// We then listen for the Fetch.authRequired event, which is triggered when a request requires authentication.
+// We send the credentials to the browser, and the request is then allowed to proceed.
+// We also listen for the Fetch.requestPaused event, which is triggered when a request is paused, so this happen for every requests.
+// We then continue the request by sending the necessary spoofed headers.
 async fn start_cdp(profile: ChromeProfile) -> Result<(), Error> {
     let mut socket = get_socket1(profile).await.unwrap();
     let enable_fetch_cmd = json!({
@@ -202,6 +208,7 @@ async fn start_cdp(profile: ChromeProfile) -> Result<(), Error> {
         if let Message::Text(text) = msg {
             println!("Messaggio ricevuto: {}", text);
             let response: serde_json::Value = serde_json::from_str(&text).unwrap();
+            // Handle the Fetch.authRequired event required for proxy authentication
             if response["method"] == "Fetch.authRequired" {
                 println!("Evento Fetch.authRequired ricevuto");
                 // let auth_challenge_response = json!({

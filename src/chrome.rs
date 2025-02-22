@@ -81,9 +81,11 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
     };
 
     let mut command = Command::new(chrome_path);
+
     command.arg(format!("--user-data-dir={}", profile.path.to_str().unwrap()));
     command.arg("--no-first-run");
     command.arg("--no-default-browser-check");
+
     // Add remote debugging if debugging_port is not 0
     if profile.debugging_port != 0 {
         command.arg(format!("--remote-debugging-port={}", profile.debugging_port));
@@ -108,7 +110,7 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
         command.arg("--force-webrtc-ip-handling-policy");
     }
 
-    command.arg("--user-agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36'");
+    // command.arg("--user-agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36'");
     // Add experimental options for WebRTC
     // command.arg("--webrtc-stun-server='stun:localhost:3478'");
     // command.arg("--enforce-webrtc-ip-permission-check");
@@ -122,21 +124,21 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
 
             // Trying new way to connecto to Chrome DevTools Protocol
 
-            websocket::start_cdp_listener(profile.clone());
+            // websocket::start_cdp_listener(profile.clone());
 
             // Set the proxy if it's configured
-            if profile.proxy.proxy_name != "" {
-                println!("Setting proxy...");
-                // If the process spawn correctly, set the proxy
-                match websocket::set_proxy_cdp(&profile) {
-                    Ok(_) => {
-                        println!("Proxy set successfully!");
-                    }
-                    Err(e) => {
-                        eprintln!("Error while setting the proxy: {}", e);
-                    }
-                }
-            }
+            // if profile.proxy.proxy_name != "" {
+            //     println!("Setting proxy...");
+            //     // If the process spawn correctly, set the proxy
+            //     match websocket::set_proxy_cdp(&profile) {
+            //         Ok(_) => {
+            //             println!("Proxy set successfully!");
+            //         }
+            //         Err(e) => {
+            //             eprintln!("Error while setting the proxy: {}", e);
+            //         }
+            //     }
+            // }
         }
         Err(e) => {
             eprintln!("Error while opening Chrome: {}", e);

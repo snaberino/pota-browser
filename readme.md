@@ -126,4 +126,6 @@ Injectin this javascript seems works.
 
 ## References
 
-1: https://chebrowser.site/doc/en/profiles.html#webrtc-settings
+1. https://chebrowser.site/doc/en/profiles.html#webrtc-settings
+2. https://github.com/daijro/camoufox
+3. https://github.com/MiddleSchoolStudent/BotBrowser
