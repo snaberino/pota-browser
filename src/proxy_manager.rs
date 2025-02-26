@@ -7,6 +7,7 @@ use serde_json::Value;
 use std::fs::File;
 use std::io::{ Read, Write };
 use std::io::BufReader;
+use std::path::PathBuf;
 
 use tokio::task;
 use tokio::task::JoinHandle;
@@ -29,6 +30,13 @@ pub type ProxiesConfig = Vec<ProxyConfig>;
 
 pub fn load_proxy_configs() -> ProxiesConfig {
     let file_path = "proxy_config.json";
+
+    //Check if the file exists
+    if !PathBuf::from(file_path).exists() {
+        let empty_proxies: ProxiesConfig = vec![];
+        save_proxy_configs(&empty_proxies);
+        return empty_proxies;
+    }
     let file = File::open(file_path).expect("Unable to open file");
     let mut reader = BufReader::new(file);
     let mut content = String::new();

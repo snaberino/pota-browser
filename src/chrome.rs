@@ -44,6 +44,14 @@ pub fn get_profile_dir(profile_name: &str) -> PathBuf {
 // Load Chrome profiles from a JSON file
 pub fn load_profile_configs() -> ChromeProfiles {
     let file_path = "chrome_profiles.json";
+
+    // Check if the file exists
+    if !PathBuf::from(file_path).exists() {
+        let empty_profiles: ChromeProfiles = vec![];
+        save_profile_configs(&empty_profiles);
+        return empty_profiles;
+    }
+
     let file = File::open(file_path).expect("Unable to open file");
     let mut reader = BufReader::new(file);
     let mut content = String::new();
