@@ -79,6 +79,8 @@ impl Default for ProfileManager {
                     proxy_password: String::new(),
 
                     country: String::new(),
+                    lang_arg: String::new(),
+                    accept_language_arg: String::new(),
                     last_ip: String::new(),
                     used_ips: vec![],
                 },
@@ -98,6 +100,8 @@ impl Default for ProfileManager {
                 proxy_password: "password".to_string(),
 
                 country: String::new(),
+                lang_arg: String::new(),
+                accept_language_arg: String::new(),
                 last_ip: String::new(),
                 used_ips: vec![],
             }
@@ -118,6 +122,8 @@ impl Default for ProfileManager {
                 proxy_password: String::new(),
 
                 country: String::new(),
+                lang_arg: String::new(),
+                accept_language_arg: String::new(),
                 last_ip: String::new(),
                 used_ips: vec![],
             },
@@ -183,6 +189,8 @@ impl eframe::App for ProfileManager {
                                 proxy_password: String::new(),
 
                                 country: String::new(),
+                                lang_arg: String::new(),
+                                accept_language_arg: String::new(),
                                 last_ip: String::new(),
                                 used_ips: vec![],
                             },
@@ -417,6 +425,8 @@ impl eframe::App for ProfileManager {
                         proxy_password: self.proxy.proxy_password.clone(),
 
                         country: String::new(),
+                        lang_arg: String::new(),
+                        accept_language_arg: String::new(),
                         last_ip: String::new(),
                         used_ips: vec![],
                     }

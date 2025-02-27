@@ -57,30 +57,13 @@ Emulation.setTimezoneOverride
 Date()
 Date().getTimezoneOffset()
 Emulation.setGeolocationOverride
+Intl.DateTimeFormat()
 
-#### Intl.DateTimeFormat() Spoofing
-
-Injectin this javascript seems works.
-
-```
-(function() {
-  // Save the original method
-  const originalResolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
-  
-  Intl.DateTimeFormat.prototype.resolvedOptions = function() {
-    // Get the original options
-    const options = originalResolvedOptions.apply(this, arguments);
-    // Force the timeZone value
-    options.timeZone = 'America/New_York';
-    return options;
-  };
-})();
-```
 
 ## Useful Chrome Arguments for Anti-Detection Mode
 
 - **`--lang`** & **`--accept-lang`**  
-  - These arguments override:  
+  - These arguments override local language and accepted language  
     - `Worker.langs`  
     - `Navigator.lang`
 
@@ -117,7 +100,7 @@ Injectin this javascript seems works.
 
 ## TODO
 
-- [ ] Automatic Chrome executable discovery.  
+- [x] Automatic Chrome executable discovery.  
 - [ ] WebRTC **fake** spoofing (correctly spoof host & STUN IP).  
 - [ ] Spoofing all `navigator` properties (device, OS, hardware, browser, etc.).  
 - [ ] Screen size, resolution, window, and viewport property spoofing.  

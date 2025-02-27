@@ -5,10 +5,9 @@ use std::path::PathBuf;
 use std::process::{ Command, Child };
 use serde::{Serialize, Deserialize};
 
+use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-
-use lazy_static::lazy_static;
 
 use crate::proxy_manager::ProxyConfig;
 use crate::websocket;
@@ -88,6 +87,7 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
         return Err(io::Error::new(io::ErrorKind::NotFound, "Unsupported OS"));
     };
 
+    // Building the command to open Chrome with all the necessary arguments
     let mut command = Command::new(chrome_path);
 
     command.arg(format!("--user-data-dir={}", profile.path.to_str().unwrap()));
@@ -102,13 +102,16 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
     if profile.headless == true {
         command.arg("--headless");
     }
-    // Proxy server argument
+    // Proxy server argument name if it's configured we use the proxy, need to refactor this because if name is empty but other proxy parameters are set it will not work
+    // When proxy is active i need to set extra arguments to Chrome for --lang and --accept-language
     if profile.proxy.proxy_name != "" {
         command.arg(format!("--proxy-server={}://{}:{}",
             profile.proxy.proxy_type,
             profile.proxy.proxy_host,
             profile.proxy.proxy_port
         ));
+        command.arg(format!("--lang={}", profile.proxy.lang_arg));
+        command.arg(format!("--accept-lang={}", profile.proxy.accept_language_arg));
     }
 
     // EXPERIMENTAL
@@ -132,36 +135,14 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
 
             // Trying new way to connecto to Chrome DevTools Protocol
 
-            // websocket::start_cdp_listener(profile.clone());
+             websocket::start_cdp_listener(profile.clone());
 
-            // Set the proxy if it's configured
-            // if profile.proxy.proxy_name != "" {
-            //     println!("Setting proxy...");
-            //     // If the process spawn correctly, set the proxy
-            //     match websocket::set_proxy_cdp(&profile) {
-            //         Ok(_) => {
-            //             println!("Proxy set successfully!");
-            //         }
-            //         Err(e) => {
-            //             eprintln!("Error while setting the proxy: {}", e);
-            //         }
-            //     }
-            // }
         }
         Err(e) => {
             eprintln!("Error while opening Chrome: {}", e);
         }
     }
     println!("Chrome opened successfully!");
-
-    // match websocket::set_timezone_cdp(&profile){
-    //     Ok(_) => {
-    //         println!("Timezone set successfully!");
-    //     }
-    //     Err(e) => {
-    //         eprintln!("Error while setting the timezone: {}", e);
-    //     }
-    // }
 
     // END EXPERIMENTAL
 

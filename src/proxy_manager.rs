@@ -1,4 +1,3 @@
-// use reqwest::Client;
 use reqwest::Client;
 
 use std::time::Duration;
@@ -12,6 +11,26 @@ use std::path::PathBuf;
 use tokio::task;
 use tokio::task::JoinHandle;
 
+use lazy_static::lazy_static;
+use std::collections::HashMap;
+
+// Structure for the language settings in the BCP 47 format
+#[derive(Clone)]
+struct LanguageSettings {
+    lang: &'static str,
+    accept_language: &'static str,
+}
+// I create a static mapping table for the language settings, so the map is built only once
+lazy_static! {
+    static ref LANGUAGE_MAP: HashMap<&'static str, LanguageSettings> = {
+        let mut map = HashMap::new();
+        map.insert("US", LanguageSettings { lang: "en-US", accept_language: "en-US,en;q=0.9" });
+        map.insert("IT", LanguageSettings { lang: "it-IT", accept_language: "it-IT,it;q=0.9" });
+        map.insert("FR", LanguageSettings { lang: "fr-FR", accept_language: "fr-FR,fr;q=0.9" });
+        map
+    };
+}
+
 #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct ProxyConfig {
     pub proxy_name: String,
@@ -22,6 +41,8 @@ pub struct ProxyConfig {
     pub proxy_password: String,
 
     pub country: String,
+    pub lang_arg: String,
+    pub accept_language_arg: String,
     pub last_ip: String,
     pub used_ips: Vec<String>,
 }
@@ -59,6 +80,15 @@ pub fn save_proxy_configs(proxy_configs: &ProxiesConfig) {
     file.write_all(json.as_bytes()).expect("Unable to write data");
 }
 
+fn get_language_settings(country_code: &str) -> LanguageSettings {
+    LANGUAGE_MAP.get(country_code)
+        .cloned()
+        .unwrap_or(LanguageSettings {
+            lang: "en-US",
+            accept_language: "en-US,en;q=0.9",
+        })
+}
+
 // Function to test a proxy and grabbing info about it, actually saving only IPs as last used and overall list of used IPs
 async fn check_proxy(mut proxy_config: ProxyConfig) -> Result<ProxyConfig, String> {
     let proxy_url = format!(
@@ -78,6 +108,7 @@ async fn check_proxy(mut proxy_config: ProxyConfig) -> Result<ProxyConfig, Strin
     match client.get("https://ipinfo.io/json").send().await {
         Ok(response) => {
             if let Ok(json) = response.json::<Value>().await {
+                // Saving the last IP
                 println!("{:?}", json); //debugging
                 let ip = json["ip"].as_str().unwrap_or("Unknown IP").to_string();
                 proxy_config.last_ip = ip.clone();
@@ -85,10 +116,15 @@ async fn check_proxy(mut proxy_config: ProxyConfig) -> Result<ProxyConfig, Strin
                 if !proxy_config.used_ips.contains(&ip) {
                     proxy_config.used_ips.push(ip.clone());
                 }
-                // proxy_config.used_ips.push(ip.clone());
 
+                // Saving the country
                 let country: String = json["country"].as_str().unwrap_or("Unknown Country").to_string();
                 proxy_config.country = country.clone();
+
+                // Gathering --lang and --accept-language arguments for Chrome based on the country
+                let settings = get_language_settings(&country);
+                proxy_config.lang_arg = settings.lang.to_string();
+                proxy_config.accept_language_arg = settings.accept_language.to_string();
         
                 Ok(proxy_config.clone())
             } else {
