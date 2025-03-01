@@ -31,15 +31,20 @@ jobs:
       - name: List release directory
         run: ls -al target/release
 
-
-      - name: Run the application inside Xvfb
+      - name: Start Xvfb
         run: |
-          xvfb-run -a ./target/release/rust_ws &
+          Xvfb :99 -screen 0 1024x768x24 &
+          sleep 3
+          export DISPLAY=:99
+          echo "DISPLAY set to $DISPLAY"
+      
+      - name: Run the application
+        run: |
+          ./target/release/rust_ws &
           sleep 5
           import -window root screenshot.png
           pkill -f rust_ws
 
-          
       - name: Commit and push screenshot
         run: |
           mv screenshot.png assets/pota-browser-screenshot.png
