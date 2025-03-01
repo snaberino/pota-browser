@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
@@ -23,9 +23,7 @@ jobs:
           sudo apt-get install -y xvfb x11-apps imagemagick
 
       - name: Set up Rust
-        uses: actions/setup-rust@v1
-        with:
-          rust-version: stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Build the project
         run: cargo build --release
@@ -38,9 +36,12 @@ jobs:
           sleep 5
           import -window root screenshot.png
           pkill -f pota-browser
-
-      - name: Commit and push changes
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: "Update GUI screenshot"
-          file_pattern: screenshot.png
+          
+      - name: Commit and push screenshot
+        run: |
+          mv screenshot.png assets/pota-browser-screenshot.png
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add assets/pota-browser-screenshot.png
+          git commit -m "Update GUI screenshot"
+          git push
