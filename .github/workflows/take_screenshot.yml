@@ -28,6 +28,10 @@ jobs:
       - name: Build the project
         run: cargo build --release
 
+      - name: List release directory
+        run: ls -al target/release
+
+
       - name: Run the application inside Xvfb
         run: |
           Xvfb :99 -screen 0 1024x768x24 &
