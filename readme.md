@@ -9,6 +9,8 @@ At the moment only Google chrome is supported.
 ## 🚧 Still a Work in Progress!
 
 I’m actively developing Pota Browser, and there’s still a lot to do. If you’re curious, feel free to check out the repo, test it out, and let me know what you think. **Bug reports, feature ideas, and contributions are more than welcome!** 🙌
+
+![Latest Screenshot](assets/pota-browser-screenshot.png)
 ## Join
 
 - **IRC:** [irc.libera.chat #potabrowser](https://web.libera.chat/#potabrowser)  
