@@ -1,78 +1,46 @@
-name: Capture GUI Screenshot
+name: Update GUI Screenshot
 
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
-  capture-screenshot:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Debug Current Directory
-      run: |
-        echo "Current directory is:"
-        pwd
-        echo "Listing files:"
-        ls -lah
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb x11-apps imagemagick
 
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          xvfb \
-          imagemagick \
-          libgtk-3-dev \
-          libx11-dev \
-          libgl1 \
-          libegl1 \
-          libglib2.0-dev \
-          libgdk-pixbuf2.0-0
+      - name: Set up Rust
+        uses: actions/setup-rust@v1
+        with:
+          rust-version: stable
 
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@stable
+      - name: Build the project
+        run: cargo build --release
 
-    - name: Build project
-      run: cargo build --release
-      working-directory: ${{ github.workspace }}
+      - name: Run the application inside Xvfb
+        run: |
+          Xvfb :99 -screen 0 1024x768x24 &
+          export DISPLAY=:99
+          ./target/release/pota-browser &
+          sleep 5
+          import -window root screenshot.png
+          pkill -f pota-browser
 
-    - name: Debug Build Output
-      run: |
-        echo "Listing target/release:"
-        ls -lah target/release
-      working-directory: ${{ github.workspace }}
-
-    - name: Run with virtual display and capture screenshot
-      run: |
-        Xvfb :99 -screen 0 1280x720x24 &
-        export DISPLAY=:99
-        "${{ github.workspace }}/target/release/pota-browser" &
-        sleep 5
-        import -window root screenshot.png || \
-        (echo "⚠️ Failed to capture window, falling back to full screen." && import -window root screenshot.png)
-      working-directory: ${{ github.workspace }}
-
-    - name: Upload Screenshot Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: gui-screenshot
-        path: screenshot.png
-
-    - name: Commit and Push Screenshot
-      run: |
-        mkdir -p assets
-        mv screenshot.png assets/pota-browser-screenshot.png
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git add assets/pota-browser-screenshot.png
-        git commit -m "Update GUI screenshot"
-        git push
-      working-directory: ${{ github.workspace }}
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "Update GUI screenshot"
+          file_pattern: screenshot.png
