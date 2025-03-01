@@ -6,6 +6,9 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: write  # Permette il commit e push direttamente dal workflow
+
 jobs:
   capture-screenshot:
     runs-on: ubuntu-latest
@@ -40,7 +43,7 @@ jobs:
         name: gui-screenshot
         path: screenshot.png
 
-    - name: Commit and Push Screenshot (optional)
+    - name: Commit and Push Screenshot
       run: |
         mkdir -p assets
         mv screenshot.png assets/pota-browser-screenshot.png
