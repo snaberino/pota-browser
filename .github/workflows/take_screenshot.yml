@@ -36,7 +36,7 @@ jobs:
         run: |
           Xvfb :99 -screen 0 1024x768x24 &
           export DISPLAY=:99
-          ./target/release/pota-browser &
+          ./target/release/rust_ws &
           sleep 5
           import -window root screenshot.png
           pkill -f pota-browser
