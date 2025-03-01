@@ -34,12 +34,11 @@ jobs:
 
       - name: Run the application inside Xvfb
         run: |
-          Xvfb :99 -screen 0 1024x768x24 &
-          export DISPLAY=:99
-          ./target/release/rust_ws &
+          xvfb-run -a ./target/release/rust_ws &
           sleep 5
           import -window root screenshot.png
-          pkill -f pota-browser
+          pkill -f rust_ws
+
           
       - name: Commit and push screenshot
         run: |
