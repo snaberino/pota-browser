@@ -31,17 +31,14 @@ jobs:
       - name: List release directory
         run: ls -al target/release
 
-      - name: Start Xvfb
+      - name: Run the application inside Xvfb
         run: |
           Xvfb :99 -screen 0 1024x768x24 &
-          sleep 3
+          sleep 3  # Allow Xvfb to start
           export DISPLAY=:99
-          echo "DISPLAY set to $DISPLAY"
-      
-      - name: Run the application
-        run: |
           ./target/release/rust_ws &
-          sleep 5
+          sleep 5  # Give your app time to render
+          echo "DISPLAY is set to: $DISPLAY"  # Debug: Confirm DISPLAY
           import -window root screenshot.png
           pkill -f rust_ws
 
