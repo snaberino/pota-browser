@@ -2,20 +2,22 @@
 
 Hello! This is a **very early alpha** version of a hypothetical profile manager and anti-detection browser written in Rust. It's completely open-source and experimental.
 
+The aim is to use the standard browser installation and tweak it in order to avoid fingerprint restriction and bypass antibot.
+
+At the moment only Google chrome is supported.
+
 ## 🚧 Still a Work in Progress!
 
 I’m actively developing Pota Browser, and there’s still a lot to do. If you’re curious, feel free to check out the repo, test it out, and let me know what you think. **Bug reports, feature ideas, and contributions are more than welcome!** 🙌
 ## Join
 
 - **IRC:** [irc.libera.chat #potabrowser](https://web.libera.chat/#potabrowser)  
-- **0xchat Group:** `nostr:naddr1qpqrzct9xvmnywfc8qcnyc3jx3jrvdp5xycnvde5vycrze34xguxvvtx8yckyvnrxuexzdnrx4jkzcnyv33nvc3kvycxxcny8ymx2e33vgq3wamnwvaz7tm8wfhh2urn9cc8scmgv96zucm0d5pqqqcyqqqfskqjky3kl`
-
 ## Usage
 
 ### Requirements
 
-- **Google Chrome** must be installed in the default path.
-- **Rust** must be installed.
+- **Google Chrome** 
+- **Rust** 
 ### Installation & Usage
 
 1. Clone the repository:
@@ -35,7 +37,9 @@ cargo run
 
 Currently, proxy support is implemented by passing the `--proxy-server` argument to Chrome, which only accepts the `host:port` format. To handle authentication, username and password injection is done via Chrome DevTools Protocol (CDP).
 
-## Spoofing things
+This is first proxy implementation and in future may change.
+
+## Spoofing *things*
 ### Spoofing user agent
 
 **`--user-agent="custom_user_agent"`** this method changes the UA string in the HTTPS header, but it might not alter all JavaScript-exposed properties.
@@ -60,7 +64,7 @@ Emulation.setGeolocationOverride
 Intl.DateTimeFormat()
 
 
-## Useful Chrome Arguments for Anti-Detection Mode
+## Useful Chrome Arguments
 
 - **`--lang`** & **`--accept-lang`**  
   - These arguments override local language and accepted language  
