@@ -1,0 +1,55 @@
+name: Update GUI Screenshot
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb x11-apps imagemagick libxkbcommon-x11-0
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build the project
+        run: cargo build --release
+
+      - name: List release directory
+        run: ls -al target/release
+
+      - name: Run the application inside Xvfb
+        run: |
+          Xvfb :99 -screen 0 1024x768x24 &
+          sleep 3  # Allow Xvfb to start
+          export DISPLAY=:99
+          ./target/release/rust_ws &
+          sleep 5  # Give your app time to render
+          echo "DISPLAY is set to: $DISPLAY"  # Debug: Confirm DISPLAY
+          import -window root screenshot.png
+          pkill -f rust_ws
+
+      - name: Commit and push screenshot
+        run: |
+          mv screenshot.png assets/pota-browser-screenshot.png
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add assets/pota-browser-screenshot.png
+          git commit -m "Update GUI screenshot"
+          git push
