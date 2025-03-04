@@ -87,27 +87,20 @@ async fn start_cdp(profile: ChromeProfile) -> Result<(), Error> {
                     "method": "Fetch.continueRequest",
                     "params": {
                         "requestId": response["params"]["requestId"],
-                        //"headers": [
-                        //    { "name": "Accept-Encoding", "value": "br, gzip, deflate" },
-                        //    { "name": "Sec-CH-UA", "value": "\"Chromium\";v=\"116\", \"Google Chrome\";v=\"116\", \";Not A Brand\";v=\"99\"" },
-                        //    { "name": "Sec-CH-UA-Platform", "value": "\"MacOS\"" },
-                        //  ]
                     }
                 });
                 socket.send(Message::Text(continue_request.to_string().into())).unwrap();
             } else if response["method"] == "Runtime.evaluate" {
-                println!("Evento Runtime.evaluate ricevuto"); //debugging
+                println!("Event Runtime.evaluate receveid"); //debugging
             }
         }
     }
-
-    // Ok(())
 }
 
 pub fn start_cdp_listener(profile: ChromeProfile) {
     task::spawn(async move {
         if let Err(e) = start_cdp(profile).await {
-            eprintln!("Errore durante l'ascolto del Chrome DevTools Protocol: {}", e);
+            eprintln!("Error while opening Chrome DevTools Protocol: {}", e);
         }
     });
 }
