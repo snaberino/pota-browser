@@ -43,31 +43,6 @@ async fn start_cdp(profile: ChromeProfile) -> Result<(), Error> {
         }
     });
     socket.send(Message::Text(enable_fetch_cmd.to_string().into())).unwrap();
-    // Timezone javascript spoofing
-    //let timezone_spoofing_jscode = r#"
-    //(function() {
-    //  // Save the original method
-    //  const originalResolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
-  
-    //  Intl.DateTimeFormat.prototype.resolvedOptions = function() {
-    //    // Get the original options
-    //    const options = originalResolvedOptions.apply(this, arguments);
-    //    // Force the timeZone value
-    //    options.timeZone = 'America/New_York';
-    //    return options;
-    //  };
-    //})();
-    //"#;
-    //// Creating CDP command to spoof the timezone
-    //let timezone_cmd = json!({
-    //    "id": 2,
-    //    "method": "Runtime.evaluate",
-    //    "params": {
-    //        "expression": timezone_spoofing_jscode,
-    //        //"returnByValue": true
-    //    }
-    //});
-    //socket.send(Message::Text(timezone_cmd.to_string().into())).unwrap();
 
     let navigate_cmd = json!( {
         "id": 3,
