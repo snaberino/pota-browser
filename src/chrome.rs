@@ -114,18 +114,12 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
         command.arg(format!("--accept-lang={}", profile.proxy.accept_language_arg));
     }
 
-    // EXPERIMENTAL
+    // WebRRTC Spoofing options
 
     if profile.webrtc == "block" {
         command.arg("--webrtc-ip-handling-policy=disable_non_proxied_udp");
         command.arg("--force-webrtc-ip-handling-policy");
     }
-
-    // command.arg("--user-agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36'");
-    // Add experimental options for WebRTC
-    // command.arg("--webrtc-stun-server='stun:localhost:3478'");
-    // command.arg("--enforce-webrtc-ip-permission-check");
-    // command.arg(format!("--disable-features=NetworkService,NetworkServiceInProcess"));
 
     // Spawn the process and store it in the CHROME_PROCESSES map in order to kill it later or other operations
     match command.spawn() {
@@ -139,12 +133,10 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
 
         }
         Err(e) => {
-            eprintln!("Error while opening Chrome: {}", e);
+            eprintln!("Error while opening Chrome: {}", e); //debugging
         }
     }
-    println!("Chrome opened successfully!");
-
-    // END EXPERIMENTAL
+    println!("Chrome opened successfully!"); //debugging
 
     Ok(())
 }
@@ -165,13 +157,7 @@ pub fn close_chrome(profile_name: &str) -> io::Result<()> {
 pub fn create_new_profile(new_profile: ChromeProfile) -> io::Result<()> {
     println!("New path directory:{}", new_profile.path.to_str().unwrap()); //debugging
 
-    // This don't work anymore
-    // if new_profile.path.exists() {
-    //     return Err(io::Error::new(
-    //         io::ErrorKind::AlreadyExists,
-    //         format!("Il profilo '{}' esiste già.", new_profile.name),
-    //     ));
-    // }
+    // NEED TO IMPLEMENT A WAY TO CHECK IF THE PROFILE ALREADY EXISTS
 
     match open_chrome(new_profile.clone()) {
         Ok(_) => {
