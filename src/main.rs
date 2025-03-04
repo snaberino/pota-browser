@@ -1,6 +1,7 @@
 pub mod chrome;
 pub mod proxy_manager;
 pub mod websocket;
+pub mod fingerprint_manager;
 
 use tokio::task::JoinHandle;
 use futures::future::FutureExt;
@@ -10,6 +11,9 @@ use proxy_manager::ProxyConfig;
 
 use chrome::ChromeProfile;
 use chrome::ChromeProfiles;
+
+use fingerprint_manager::FingerprintManager;
+use fingerprint_manager::SingleFingerprint;
 
 use eframe::egui;
 
@@ -35,16 +39,21 @@ fn main() -> Result<(), eframe::Error> {
 }
 
 struct ProfileManager {
-    profiles: ChromeProfiles,
-    open_profiles: ChromeProfiles,
-    selected_profile: ChromeProfile,
+    profiles: ChromeProfiles, // All the profiles
+    open_profiles: ChromeProfiles, // Opened profiles in current runtime
+    selected_profile: ChromeProfile, // Selected profile for dropdown menu
     new_profile_name: String, // Need it in order to create a new profile
-    proxy_configs: ProxiesConfig,
-    proxy : ProxyConfig,
-    selected_proxy: ProxyConfig,
+    proxy_configs: ProxiesConfig, // All the proxy configs
+    selected_proxy: ProxyConfig, // Selected proxy for dropdown menu
+    proxy : ProxyConfig, // Proxy struct in order to create a new proxy
     log_message : String, // Render log messages
 
-    check_handles: Vec<JoinHandle<Result<ProxyConfig, String>>>,
+    check_handles: Vec<JoinHandle<Result<ProxyConfig, String>>>, // Background handle for checking proxies
+
+    // Fingerprints zone
+    fingerprint_manager: FingerprintManager,
+    single_fingerprint: SingleFingerprint,
+    selected_os_list: Vec<String>,
 }
 
 impl Default for ProfileManager {
@@ -94,6 +103,10 @@ impl Default for ProfileManager {
             }
         });
 
+        // Loading fingerprint manager
+        let fingerprint_manager: FingerprintManager = fingerprint_manager::load_fingerprint_manger();
+        let selected_os_list: Vec<String> = fingerprint_manager.os_type[0].clone();
+
         Self {
             profiles,
             open_profiles: ChromeProfiles::new(),
@@ -118,6 +131,12 @@ impl Default for ProfileManager {
             log_message: String::new(),
 
             check_handles: Vec::new(),
+
+            fingerprint_manager,
+            single_fingerprint: SingleFingerprint {
+                os_type: String::new(),
+            },
+            selected_os_list,
         }
     }
 }
@@ -271,6 +290,29 @@ impl eframe::App for ProfileManager {
             }); // horizontal
 
             ui.label("FINGERPRINT CONFIGURATION");
+            ui.horizontal(|ui|{
+                ui.label("OS");
+                egui::ComboBox::from_id_salt(egui::Id::new("os_selector"))
+                    .selected_text(&self.single_fingerprint.os_type)
+                        .show_ui(ui, |ui| {
+                            ui.horizontal(|ui| { 
+                                if ui.button("Windows").clicked() {
+                                    self.selected_os_list = self.fingerprint_manager.os_type[0].clone();
+                                    println!("List A selected"); 
+                                }
+                                if ui.button("Mac").clicked() {
+                                    self.selected_os_list = self.fingerprint_manager.os_type[1].clone();
+                                    println!("List B selected");
+                                }
+                            });
+
+                            for os_type in &self.selected_os_list {
+                                ui.selectable_value(&mut self.single_fingerprint.os_type, os_type.clone(), os_type);
+                            }
+
+                        });
+            }); // horizontal
+
             ui.horizontal(|ui| {
                 // Dropdown menu for WebRTC IP handling
                 // Store the old value
