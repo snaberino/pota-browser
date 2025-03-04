@@ -14,8 +14,6 @@ use chrome::ChromeProfiles;
 use eframe::egui;
 
 use tokio::runtime::Builder;
-// use tokio::task;
-
 
 fn main() -> Result<(), eframe::Error> {
     // Initialize the Tokio runtime
@@ -35,17 +33,6 @@ fn main() -> Result<(), eframe::Error> {
         )
     })
 }
-
-
-// fn main() -> Result<(), eframe::Error> {
-//     let mut options = eframe::NativeOptions::default();
-//     options.viewport.resizable = Some(true);
-//     eframe::run_native(
-//         "pota browser",
-//         options,
-//         Box::new(|_cc| Ok(Box::new(ProfileManager::default()))),
-//     )
-// }
 
 struct ProfileManager {
     profiles: ChromeProfiles,
@@ -138,8 +125,7 @@ impl Default for ProfileManager {
 impl eframe::App for ProfileManager {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
 
-
-        // Polla i job in corso
+        // Polling the check_handles to see if any of them are done
         let mut new_handles = Vec::new();
         for mut handle in self.check_handles.drain(..) {
             if let Some(done) = std::pin::Pin::new(&mut handle).now_or_never() {
@@ -264,12 +250,6 @@ impl eframe::App for ProfileManager {
                         chrome::save_profile_configs(&self.profiles);
                         self.log_message = format!("Headless mode for profile {} set to {}.", self.selected_profile.name, self.selected_profile.headless);
                     }
-                    
-                    // if let Some(profile) = self.profiles.iter_mut().find(|p| p.name == self.selected_profile.name) {
-                    //     profile.webrtc = self.selected_profile.webrtc.clone();
-                    //     chrome::save_profile_configs(&self.profiles);
-                    //     self.log_message = format!("WebRTC spoofing for profile {} set to {}.", self.selected_profile.name, self.selected_profile.webrtc);
-                    // }
 
                 }
             }); //  horizontal
@@ -354,7 +334,6 @@ impl eframe::App for ProfileManager {
                             Ok(_) => self.log_message = format!("Profile {} closed successfully.", profile.name),
                             Err(e) => self.log_message = format!("Error: {}", e),
                         }
-                        // chrome::close_chrome(&profile.name);
                         self.open_profiles.retain(|p| p.name != profile.name); // Rimuovi il profilo dalla lista
                     }
                 });
@@ -511,15 +490,6 @@ impl eframe::App for ProfileManager {
                             let new_handle = proxy_manager::start_check_proxy(proxy.clone(), self.proxy_configs.clone());
                             self.check_handles.push(new_handle);
                             self.log_message = format!("Checking proxy {} in background...", proxy.proxy_name);
-
-                            // match proxy_manager::start_check_proxy(proxy.clone(), self.proxy_configs.clone()) {
-                            //     Ok(()) => {
-                            //         self.log_message = format!("Proxy {} checked successfully.", proxy.proxy_name);
-                            //     }
-                            //     Err(e) => {
-                            //         self.log_message = format!("Error while checking the proxy: {}", e);
-                            //     }
-                            // };
                             
                         }
                     }
@@ -527,7 +497,7 @@ impl eframe::App for ProfileManager {
             });
             ui.separator();
 
-            // Renderizzo i messaggi di log
+            // Rendering log messages
             if !self.log_message.is_empty() {
                 if self.log_message.starts_with("Error") {
                     ui.colored_label(egui::Color32::RED, &self.log_message);
