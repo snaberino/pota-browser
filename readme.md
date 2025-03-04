@@ -118,3 +118,6 @@ Intl.DateTimeFormat()
 1. https://chebrowser.site/doc/en/profiles.html#webrtc-settings
 2. https://github.com/daijro/camoufox
 3. https://github.com/MiddleSchoolStudent/BotBrowser
+
+
+"{\"Accept-Language\":\"it-IT,it;q=0.9\",\"Sec-Ch-Device-Memory\":\"8\",\"Sec-Ch-Ua\":\"\\\"Not(A:Brand\\\";v=\\\"99\\\", \\\"Google Chrome\\\";v=\\\"133\\\", \\\"Chromium\\\";v=\\\"133\\\"\",\"Sec-Ch-Ua-Arch\":\"\\\"x86\\\"\",\"Sec-Ch-Ua-Full-Version\":\"\\\"133.0.6943.54\\\"\",\"Sec-Ch-Ua-Full-Version-List\":\"\\\"Not(A:Brand\\\";v=\\\"99.0.0.0\\\", \\\"Google Chrome\\\";v=\\\"133.0.6943.54\\\", \\\"Chromium\\\";v=\\\"133.0.6943.54\\\"\",\"Sec-Ch-Ua-Platform\":\"\\\"Windows\\\"\",\"Sec-Ch-Ua-Platform-Version\":\"\\\"10.0.0\\\"\",\"User-Agent\":\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36\"}"

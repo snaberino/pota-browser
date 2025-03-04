@@ -214,8 +214,9 @@ impl eframe::App for ProfileManager {
             //
             // Single profile section selection and edit actions
             //
+            ui.label("PROFILE CONFIGURATION");
             ui.horizontal(|ui| {
-                ui.label("PROFILE SELECTOR");
+                ui.label("Select profile");
                 egui::ComboBox::from_id_salt(egui::Id::new("profile_selector"))
                 .selected_text(&self.selected_profile.name)
                 .show_ui(ui, |ui| {
@@ -264,29 +265,6 @@ impl eframe::App for ProfileManager {
                         self.log_message = format!("Headless mode for profile {} set to {}.", self.selected_profile.name, self.selected_profile.headless);
                     }
                     
-                    // Dropdown menu for WebRTC IP handling
-                    // Store the old value
-                    let old_webrtc = self.selected_profile.webrtc.clone();
-                    ui.label("WebRTC Spoofing:");
-                    egui::ComboBox::from_id_salt(egui::Id::new("webrtc_spoofing_selector"))
-                        .selected_text(&self.selected_profile.webrtc)
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(&mut self.selected_profile.webrtc, "default".to_string(), "default");
-                            ui.selectable_value(&mut self.selected_profile.webrtc, "fake".to_string(), "fake");
-                            ui.selectable_value(&mut self.selected_profile.webrtc, "block".to_string(), "block");
-                        });
-                    // Update only if changed
-                    if old_webrtc != self.selected_profile.webrtc {
-                        if let Some(profile) = self.profiles.iter_mut().find(|p| p.name == self.selected_profile.name) {
-                            profile.webrtc = self.selected_profile.webrtc.clone();
-                            chrome::save_profile_configs(&self.profiles);
-                            self.log_message = format!(
-                                "WebRTC spoofing for profile {} set to {}.",
-                                self.selected_profile.name,
-                                self.selected_profile.webrtc
-                            );
-                        }
-                    }
                     // if let Some(profile) = self.profiles.iter_mut().find(|p| p.name == self.selected_profile.name) {
                     //     profile.webrtc = self.selected_profile.webrtc.clone();
                     //     chrome::save_profile_configs(&self.profiles);
@@ -297,7 +275,7 @@ impl eframe::App for ProfileManager {
             }); //  horizontal
 
             ui.horizontal(|ui| {
-                ui.label("Proxy:");
+                ui.label("Proxy");
                 egui::ComboBox::from_id_salt(egui::Id::new("proxy_selector"))
                 .selected_text(&self.selected_proxy.proxy_name)
                 .show_ui(ui, |ui| {
@@ -311,6 +289,33 @@ impl eframe::App for ProfileManager {
                     println!("Profile selected: {:?}", self.selected_profile);
                 }
             }); // horizontal
+
+            ui.label("FINGERPRINT CONFIGURATION");
+            ui.horizontal(|ui| {
+                // Dropdown menu for WebRTC IP handling
+                // Store the old value
+                let old_webrtc = self.selected_profile.webrtc.clone();
+                ui.label("WebRTC");
+                egui::ComboBox::from_id_salt(egui::Id::new("webrtc_spoofing_selector"))
+                    .selected_text(&self.selected_profile.webrtc)
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(&mut self.selected_profile.webrtc, "default".to_string(), "default");
+                        ui.selectable_value(&mut self.selected_profile.webrtc, "fake".to_string(), "fake");
+                        ui.selectable_value(&mut self.selected_profile.webrtc, "block".to_string(), "block");
+                    });
+                // Update only if changed
+                if old_webrtc != self.selected_profile.webrtc {
+                    if let Some(profile) = self.profiles.iter_mut().find(|p| p.name == self.selected_profile.name) {
+                        profile.webrtc = self.selected_profile.webrtc.clone();
+                        chrome::save_profile_configs(&self.profiles);
+                        self.log_message = format!(
+                            "WebRTC spoofing for profile {} set to {}.",
+                            self.selected_profile.name,
+                            self.selected_profile.webrtc
+                        );
+                    }
+                }
+            });
 
             ui.separator();
 

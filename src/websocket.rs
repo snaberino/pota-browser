@@ -80,12 +80,12 @@ async fn start_cdp(profile: ChromeProfile) -> Result<(), Error> {
 
     // Listen indefinitely for incoming messages
     loop {
-        let msg = socket.read().expect("Errore nella lettura del messaggio");
+        let msg = socket.read().expect("Error while reading incoming msg");
         if let Message::Text(text) = msg {
-            //println!("Messaggio ricevuto: {}", text); //debugging
+            //println!("Message  recevied: {}", text); //debugging
             let response: serde_json::Value = serde_json::from_str(&text).unwrap();
-            println!("Evento: {}", response); //debugging
-            //println!("Metodo: {}", response["method"]); //debugging
+            println!("Event: {}", response); //debugging
+            //println!("Method: {}", response["method"]); //debugging
             // Section for handling all the fetch events
             // Handle the Fetch.authRequired event required for proxy authentication
             if response["method"] == "Fetch.authRequired" {
