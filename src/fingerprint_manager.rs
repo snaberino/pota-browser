@@ -9,6 +9,7 @@ pub struct FingerprintManager {
 
 }
 
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct SingleFingerprint {
 	pub os_type: String,
 }

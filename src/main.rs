@@ -51,9 +51,9 @@ struct ProfileManager {
     check_handles: Vec<JoinHandle<Result<ProxyConfig, String>>>, // Background handle for checking proxies
 
     // Fingerprints zone
-    fingerprint_manager: FingerprintManager,
-    single_fingerprint: SingleFingerprint,
-    selected_os_list: Vec<String>,
+    fingerprint_manager: FingerprintManager, // Variable for storing all the information in order to generate a fingerprint
+    single_fingerprint: SingleFingerprint, // Variable for storing a single fingerprint to inject in profiles
+    selected_os_list: Vec<String>, // To handle dropdown menu for OS selection
 }
 
 impl Default for ProfileManager {
@@ -66,21 +66,11 @@ impl Default for ProfileManager {
                 path: chrome::get_profile_dir("Default"),
                 debugging_port: 0,
                 headless: false,
-                proxy: ProxyConfig {
-                    proxy_type: "socks5".to_string(),
-                    proxy_name: String::new(),
-                    proxy_host: String::new(),
-                    proxy_port: String::new(),
-                    proxy_username: String::new(),
-                    proxy_password: String::new(),
-
-                    country: String::new(),
-                    lang_arg: String::new(),
-                    accept_language_arg: String::new(),
-                    last_ip: String::new(),
-                    used_ips: vec![],
-                },
+                proxy: ProxyConfig::new(),
                 webrtc: String::new(),
+                fingerprint: SingleFingerprint {
+                    os_type: String::new(),
+                },
             }
         });
 
@@ -113,20 +103,7 @@ impl Default for ProfileManager {
             selected_profile,
             new_profile_name: String::new(),
             proxy_configs,
-            proxy: ProxyConfig {
-                proxy_type: "socks5".to_string(),
-                proxy_name: String::new(),
-                proxy_host: String::new(),
-                proxy_port: String::new(),
-                proxy_username: String::new(),
-                proxy_password: String::new(),
-
-                country: String::new(),
-                lang_arg: String::new(),
-                accept_language_arg: String::new(),
-                last_ip: String::new(),
-                used_ips: vec![],
-            },
+            proxy: ProxyConfig::new(),
             selected_proxy,
             log_message: String::new(),
 
@@ -185,21 +162,11 @@ impl eframe::App for ProfileManager {
                             path: chrome::get_profile_dir(&self.new_profile_name.clone()),
                             debugging_port: 0,
                             headless: true,
-                            proxy: ProxyConfig {
-                                proxy_type: "socks5".to_string(),
-                                proxy_name: String::new(),
-                                proxy_host: String::new(),
-                                proxy_port: String::new(),
-                                proxy_username: String::new(),
-                                proxy_password: String::new(),
-
-                                country: String::new(),
-                                lang_arg: String::new(),
-                                accept_language_arg: String::new(),
-                                last_ip: String::new(),
-                                used_ips: vec![],
-                            },
+                            proxy: ProxyConfig::new(),
                             webrtc: String::new(),
+                            fingerprint: SingleFingerprint {
+                                os_type: String::new(),
+                            },
                         };
                         self.profiles.push(new_profile.clone());
                         match chrome::create_new_profile(new_profile.clone()) {
@@ -284,6 +251,7 @@ impl eframe::App for ProfileManager {
                 });
                 if ui.button("Set Proxy").clicked() {
                     self.selected_profile.proxy = self.selected_proxy.clone();
+                    self.log_message = format!("Proxy {} set for profile {}.", self.selected_proxy.proxy_name, self.selected_profile.name);
                     println!("Proxy selected: {:?}", self.selected_proxy);
                     println!("Profile selected: {:?}", self.selected_profile);
                 }

@@ -48,6 +48,26 @@ pub struct ProxyConfig {
 
 pub type ProxiesConfig = Vec<ProxyConfig>;
 
+impl ProxyConfig {
+    pub fn new() -> Self {
+        ProxyConfig {
+            proxy_name: "".to_string(),
+            proxy_type: "".to_string(),
+            proxy_host: "".to_string(),
+            proxy_port: "".to_string(),
+            proxy_username: "".to_string(),
+            proxy_password: "".to_string(),
+            country: "".to_string(),
+            lang_arg: "".to_string(),
+            accept_language_arg: "".to_string(),
+            last_ip: "".to_string(),
+            used_ips: vec![],
+        }
+    }
+}
+
+// PROXY MANAGER UTIL FUNCTIONS
+
 pub fn load_proxy_configs() -> ProxiesConfig {
     let file_path = "proxy_config.json";
 

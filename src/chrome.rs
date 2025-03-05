@@ -12,6 +12,8 @@ use std::sync::{Arc, Mutex};
 use crate::proxy_manager::ProxyConfig;
 use crate::websocket;
 
+use crate::fingerprint_manager::SingleFingerprint;
+
 lazy_static! {
     static ref CHROME_PROCESSES: Arc<Mutex<HashMap<String, Child>>> = Arc::new(Mutex::new(HashMap::new()));
 }
@@ -24,7 +26,8 @@ pub struct ChromeProfile {
     pub debugging_port : u16,
     pub headless: bool,
     pub proxy: ProxyConfig,
-    pub webrtc: String
+    pub webrtc: String,
+    pub fingerprint: SingleFingerprint,
 }
 
 pub type ChromeProfiles = Vec<ChromeProfile>;
@@ -129,7 +132,10 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
 
             // Trying new way to connecto to Chrome DevTools Protocol
 
-             websocket::start_cdp_listener(profile.clone());
+            if profile.debugging_port != 0 {
+                websocket::start_cdp_listener(profile.clone());
+            }
+            
 
         }
         Err(e) => {
