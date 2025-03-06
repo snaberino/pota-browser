@@ -94,8 +94,9 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
     let mut command = Command::new(chrome_path);
 
     command.arg(format!("--user-data-dir={}", profile.path.to_str().unwrap()));
-    command.arg("--no-first-run");
-    command.arg("--no-default-browser-check");
+    command.arg("--no-first-run"); // AVOID ALL THE POPUP FOR NEW PROFILES
+    command.arg("--no-default-browser-check"); // STOP DEFAULT BROWSER CAMPAIGN
+    command.arg("--disable-features=Translate,LensStandalone,LensOverlay,LensOverlayTranslateButton,LensOverlayContextualSearchBox,LensOverlayLatencyOptimizations,LensOverlayImageContextMenuActions,LensOverlayTranslateLanguages,LensOverlaySidePanelOpenInNewTab"); // STOP TRANSLATION, SEARCH GOOGLE LENS
 
     // Add remote debugging if debugging_port is not 0
     if profile.debugging_port != 0 {
@@ -135,7 +136,6 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
             if profile.debugging_port != 0 {
                 websocket::start_cdp_listener(profile.clone());
             }
-            
 
         }
         Err(e) => {
