@@ -42,7 +42,9 @@ Currently, proxy support is implemented by passing the `--proxy-server` argument
 This is first proxy implementation and in future may change.
 
 ## Spoofing *things*
-### Spoofing user agent
+
+
+### Spoofing HTTP User-Agent
 
 **`--user-agent="custom_user_agent"`** this method changes the UA string in the HTTPS header, but it might not alter all JavaScript-exposed properties.
 

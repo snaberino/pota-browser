@@ -10,7 +10,7 @@ use crate::chrome::ChromeProfile;
 
 async fn get_socket1(profile: ChromeProfile) -> Result<WebSocket<MaybeTlsStream<TcpStream>>, Error> {
     // DevTools URL
-    let devtools_url = format!("http://localhost:{}/json", profile.debugging_port);
+    let devtools_url = format!("http://127.0.0.1:{}/json", profile.debugging_port);
 
     // Retrieve the list of pages
     let response = reqwest::get(&devtools_url).await?;
@@ -87,6 +87,9 @@ async fn start_cdp(profile: ChromeProfile) -> Result<(), Error> {
                     "method": "Fetch.continueRequest",
                     "params": {
                         "requestId": response["params"]["requestId"],
+                        "headers" : {
+                            "Sec-CH-UA-Platform" : "Windows"
+                        }
                     }
                 });
                 socket.send(Message::Text(continue_request.to_string().into())).unwrap();

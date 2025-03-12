@@ -281,8 +281,8 @@ impl eframe::App for ProfileManager {
                         });
             }); // horizontal
 
-            ui.horizontal(|ui| {
-                // Dropdown menu for WebRTC IP handling
+            // Dropdown menu for WebRTC IP handling
+            ui.horizontal(|ui| {    
                 // Store the old value
                 let old_webrtc = self.selected_profile.webrtc.clone();
                 ui.label("WebRTC");

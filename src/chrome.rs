@@ -85,7 +85,7 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
     } else if cfg!(target_os = "macos") {
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
     } else if cfg!(target_os = "linux") {
-        "/usr/bin/google-chrome"
+        "/usr/bin/google-chrome-stable"
     } else {
         return Err(io::Error::new(io::ErrorKind::NotFound, "Unsupported OS"));
     };
