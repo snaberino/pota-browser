@@ -1,4 +1,5 @@
-.gitignore
 .obsidian
 target
 chrome_profiles
+chrome_profiles.json
+proxy_config.json

@@ -1,6 +1,6 @@
 use eframe::egui;
-use crate::chrome::{self, ChromeProfile};
-use crate::proxy_manager::ProxyConfig;
+use crate::chrome;
+// use crate::proxy_manager::ProxyConfig;
 use crate::ProfileManager;
 
 pub fn single_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {

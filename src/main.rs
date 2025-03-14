@@ -154,7 +154,7 @@ impl eframe::App for ProfileManager {
         }
         self.check_handles = new_handles;
 
-        let mut proxy_configs = proxy_manager::load_proxy_configs();
+        // let mut proxy_configs = proxy_manager::load_proxy_configs();
 
         egui::CentralPanel::default().show(ctx, |ui| {
             

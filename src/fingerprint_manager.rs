@@ -1,7 +1,7 @@
 use::std::fs::File;
 use::std::io::{BufReader, Read};
 use serde::{Serialize, Deserialize};
-use serde_json::Value;
+// use serde_json::Value;
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct FingerprintManager {
