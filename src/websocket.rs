@@ -45,10 +45,10 @@ async fn start_cdp(profile: ChromeProfile) -> Result<(), Error> {
     socket.send(Message::Text(enable_fetch_cmd.to_string().into())).unwrap();
 
     let navigate_cmd = json!( {
-        "id": 3,
+        "id": 2,
         "method": "Page.navigate",
         "params": {
-            "url": "https://abrahamjuliot.github.io/creepjs/"
+            "url": "https://browserleaks.com/client-hints"
         }
     });
     socket.send(Message::Text(navigate_cmd.to_string().into())).unwrap();
@@ -87,9 +87,12 @@ async fn start_cdp(profile: ChromeProfile) -> Result<(), Error> {
                     "method": "Fetch.continueRequest",
                     "params": {
                         "requestId": response["params"]["requestId"],
-                        "headers" : {
-                            "Sec-CH-UA-Platform" : "Windows"
-                        }
+                        "headers" : [
+                            {
+                                "name": "Sec-CH-UA-Platform",
+                                "value" : "Windows"
+                            }
+                        ]
                     }
                 });
                 socket.send(Message::Text(continue_request.to_string().into())).unwrap();

@@ -1,9 +1,9 @@
 [
   {
     "name": "test",
-    "path": "/home/snaber/source/pota-browser/chrome_profiles/test",
+    "path": "C:\\Users\\crystal\\Desktop\\pota-browser\\chrome_profiles\\test",
     "debugging_port": 9222,
-    "headless": false,
+    "headless": true,
     "proxy": {
       "proxy_name": "",
       "proxy_type": "",
