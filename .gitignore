@@ -1,0 +1,4 @@
+.gitignore
+.obsidian
+target
+chrome_profiles

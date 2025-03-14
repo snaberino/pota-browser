@@ -10,7 +10,7 @@ use crate::chrome::ChromeProfile;
 
 async fn get_socket1(profile: ChromeProfile) -> Result<WebSocket<MaybeTlsStream<TcpStream>>, Error> {
     // DevTools URL
-    let devtools_url = format!("http://localhost:{}/json", profile.debugging_port);
+    let devtools_url = format!("http://127.0.0.1:{}/json", profile.debugging_port);
 
     // Retrieve the list of pages
     let response = reqwest::get(&devtools_url).await?;
@@ -45,10 +45,10 @@ async fn start_cdp(profile: ChromeProfile) -> Result<(), Error> {
     socket.send(Message::Text(enable_fetch_cmd.to_string().into())).unwrap();
 
     let navigate_cmd = json!( {
-        "id": 3,
+        "id": 2,
         "method": "Page.navigate",
         "params": {
-            "url": "https://abrahamjuliot.github.io/creepjs/"
+            "url": "https://browserleaks.com/client-hints"
         }
     });
     socket.send(Message::Text(navigate_cmd.to_string().into())).unwrap();
@@ -87,6 +87,12 @@ async fn start_cdp(profile: ChromeProfile) -> Result<(), Error> {
                     "method": "Fetch.continueRequest",
                     "params": {
                         "requestId": response["params"]["requestId"],
+                        "headers" : [
+                            {
+                                "name": "Sec-CH-UA-Platform",
+                                "value" : "Windows"
+                            }
+                        ]
                     }
                 });
                 socket.send(Message::Text(continue_request.to_string().into())).unwrap();

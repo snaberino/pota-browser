@@ -12,6 +12,8 @@ use std::sync::{Arc, Mutex};
 use crate::proxy_manager::ProxyConfig;
 use crate::websocket;
 
+use crate::fingerprint_manager::SingleFingerprint;
+
 lazy_static! {
     static ref CHROME_PROCESSES: Arc<Mutex<HashMap<String, Child>>> = Arc::new(Mutex::new(HashMap::new()));
 }
@@ -24,7 +26,8 @@ pub struct ChromeProfile {
     pub debugging_port : u16,
     pub headless: bool,
     pub proxy: ProxyConfig,
-    pub webrtc: String
+    pub webrtc: String,
+    pub fingerprint: SingleFingerprint,
 }
 
 pub type ChromeProfiles = Vec<ChromeProfile>;
@@ -82,7 +85,7 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
     } else if cfg!(target_os = "macos") {
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
     } else if cfg!(target_os = "linux") {
-        "/usr/bin/google-chrome"
+        "/usr/bin/google-chrome-stable"
     } else {
         return Err(io::Error::new(io::ErrorKind::NotFound, "Unsupported OS"));
     };
@@ -91,8 +94,9 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
     let mut command = Command::new(chrome_path);
 
     command.arg(format!("--user-data-dir={}", profile.path.to_str().unwrap()));
-    command.arg("--no-first-run");
-    command.arg("--no-default-browser-check");
+    command.arg("--no-first-run"); // AVOID ALL THE POPUP FOR NEW PROFILES
+    command.arg("--no-default-browser-check"); // STOP DEFAULT BROWSER CAMPAIGN
+    command.arg("--disable-features=Translate,LensStandalone,LensOverlay,LensOverlayTranslateButton,LensOverlayContextualSearchBox,LensOverlayLatencyOptimizations,LensOverlayImageContextMenuActions,LensOverlayTranslateLanguages,LensOverlaySidePanelOpenInNewTab"); // STOP TRANSLATION, SEARCH GOOGLE LENS
 
     // Add remote debugging if debugging_port is not 0
     if profile.debugging_port != 0 {
@@ -129,7 +133,9 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
 
             // Trying new way to connecto to Chrome DevTools Protocol
 
-             websocket::start_cdp_listener(profile.clone());
+            if profile.debugging_port != 0 {
+                websocket::start_cdp_listener(profile.clone());
+            }
 
         }
         Err(e) => {

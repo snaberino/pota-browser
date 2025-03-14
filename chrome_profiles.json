@@ -1,0 +1,25 @@
+[
+  {
+    "name": "test",
+    "path": "C:\\Users\\crystal\\Desktop\\pota-browser\\chrome_profiles\\test",
+    "debugging_port": 9222,
+    "headless": true,
+    "proxy": {
+      "proxy_name": "",
+      "proxy_type": "",
+      "proxy_host": "",
+      "proxy_port": "",
+      "proxy_username": "",
+      "proxy_password": "",
+      "country": "",
+      "lang_arg": "",
+      "accept_language_arg": "",
+      "last_ip": "",
+      "used_ips": []
+    },
+    "webrtc": "block",
+    "fingerprint": {
+      "os_type": ""
+    }
+  }
+]
