@@ -39,11 +39,11 @@ jobs:
           Xvfb :99 -screen 0 1024x768x24 &
           sleep 3  # Allow Xvfb to start
           export DISPLAY=:99
-          ./target/release/rust_ws &
+          ./target/release/pota-browser &
           sleep 5  # Give your app time to render
           echo "DISPLAY is set to: $DISPLAY"  # Debug: Confirm DISPLAY
           import -window root screenshot.png
-          pkill -f rust_ws
+          pkill -f pota-browser
 
       - name: Commit and push screenshot
         run: |
