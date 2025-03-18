@@ -7,7 +7,7 @@ pub fn active_profiles_section(ui: &mut egui::Ui, manager: &mut ProfileManager) 
         ui.horizontal(|ui| {
             ui.label(&profile.name);
             if ui.button("CLOSE").clicked() {
-                match crate::chrome::close_chrome(&profile.name) {
+                match crate::chromium::close_chrome(&profile.name) {
                     Ok(_) => manager.log_message = format!("Profile {} closed successfully.", profile.name),
                     Err(e) => manager.log_message = format!("Error: {}", e),
                 }

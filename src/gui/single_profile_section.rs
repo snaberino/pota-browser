@@ -1,5 +1,5 @@
 use eframe::egui;
-use crate::chrome;
+use crate::chromium::{open_chrome, save_profile_configs};
 // use crate::proxy_manager::ProxyConfig;
 use crate::ProfileManager;
 
@@ -23,7 +23,7 @@ pub fn single_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
             manager.log_message = "No profile found.".to_string();
         } else {
             if ui.button("OPEN").clicked() {
-                match chrome::open_chrome(manager.selected_profile.clone()) {
+                match open_chrome(manager.selected_profile.clone()) {
                     Ok(_) => {
                         manager.log_message = format!("Profile {} opened successfully.", manager.selected_profile.name);
                         manager.open_profiles.push(manager.selected_profile.clone());
@@ -40,7 +40,7 @@ pub fn single_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
                 if let Some(profile) = manager.profiles.iter_mut().find(|p| p.name == manager.selected_profile.name) {
                     profile.debugging_port = manager.selected_profile.debugging_port;
                 }
-                chrome::save_profile_configs(&manager.profiles);
+                save_profile_configs(&manager.profiles);
                 manager.log_message = format!("Debugging port for profile {} set to {}.", manager.selected_profile.name, manager.selected_profile.debugging_port);
             }
             
@@ -51,7 +51,7 @@ pub fn single_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
                 if let Some(profile) = manager.profiles.iter_mut().find(|p| p.name == manager.selected_profile.name) {
                     profile.headless = manager.selected_profile.headless;
                 }
-                chrome::save_profile_configs(&manager.profiles);
+                save_profile_configs(&manager.profiles);
                 manager.log_message = format!("Headless mode for profile {} set to {}.", manager.selected_profile.name, manager.selected_profile.headless);
             }
 
@@ -115,7 +115,7 @@ pub fn single_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
         if old_webrtc != manager.selected_profile.webrtc {
             if let Some(profile) = manager.profiles.iter_mut().find(|p| p.name == manager.selected_profile.name) {
                 profile.webrtc = manager.selected_profile.webrtc.clone();
-                chrome::save_profile_configs(&manager.profiles);
+                save_profile_configs(&manager.profiles);
                 manager.log_message = format!(
                     "WebRTC spoofing for profile {} set to {}.",
                     manager.selected_profile.name,
@@ -125,5 +125,24 @@ pub fn single_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
         }
     });
 
+    // Custom FLAG
+    ui.horizontal(|ui| {
+        ui.label("Custom Flags");
+        // Text box for custom flags
+        ui.text_edit_singleline(&mut manager.selected_profile.custom_flags);
+
+        if ui.button("Apply Flags").clicked() {
+            if let Some(profile) = manager.profiles.iter_mut().find(|p| p.name == manager.selected_profile.name) {
+                profile.custom_flags = manager.selected_profile.custom_flags.clone();
+                save_profile_configs(&manager.profiles);
+                manager.log_message = format!(
+                    "Custom flags for profile {} set to: {}",
+                    manager.selected_profile.name,
+                    manager.selected_profile.custom_flags
+                );
+            }
+        }
+    });
+    
     ui.separator();
 }

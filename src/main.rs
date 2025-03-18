@@ -1,4 +1,5 @@
-pub mod chrome;
+pub mod chromium;
+
 pub mod proxy_manager;
 pub mod websocket;
 pub mod fingerprint_manager;
@@ -9,8 +10,8 @@ use futures::future::FutureExt;
 use proxy_manager::ProxiesConfig;
 use proxy_manager::ProxyConfig;
 
-use chrome::ChromeProfile;
-use chrome::ChromeProfiles;
+use chromium::ChromeProfile;
+use chromium::ChromeProfiles;
 
 use fingerprint_manager::FingerprintManager;
 use fingerprint_manager::SingleFingerprint;
@@ -18,6 +19,8 @@ use fingerprint_manager::SingleFingerprint;
 use eframe::egui;
 
 use tokio::runtime::Builder;
+
+use std::collections::HashMap;
 
 mod gui {
     pub mod new_profile_section;
@@ -48,10 +51,15 @@ fn main() -> Result<(), eframe::Error> {
 }
 
 struct ProfileManager {
+    installed_browsers: HashMap<String, String>, // Installed browsers
+
+    new_profile_name: String, // Need it in order to create a new profile
+    selected_browser_path: String, // Selected browser path for dropdown menu
+
     profiles: ChromeProfiles, // All the profiles
     open_profiles: ChromeProfiles, // Opened profiles in current runtime
     selected_profile: ChromeProfile, // Selected profile for dropdown menu
-    new_profile_name: String, // Need it in order to create a new profile
+    
     proxy_configs: ProxiesConfig, // All the proxy configs
     selected_proxy: ProxyConfig, // Selected proxy for dropdown menu
     proxy : ProxyConfig, // Proxy struct in order to create a new proxy
@@ -67,16 +75,21 @@ struct ProfileManager {
 
 impl Default for ProfileManager {
     fn default() -> Self {
+        // Loading existing installed browsers
+        let installed_browsers = gui::new_profile_section::discover_installed_browsers();
+
         // Loading existing profiles
-        let profiles: ChromeProfiles = chrome::load_profile_configs();
+        let profiles: ChromeProfiles = chromium::load_profile_configs();
         let selected_profile = profiles.get(0).cloned().unwrap_or_else(|| {
             ChromeProfile {
                 name: "Default".to_string(),
-                path: chrome::get_profile_dir("Default"),
+                browser_path: "browser_path".to_string(),
+                path: chromium::get_profile_dir("Default"),
                 debugging_port: 0,
                 headless: false,
                 proxy: ProxyConfig::new(),
                 webrtc: String::new(),
+                custom_flags: String::new(),
                 fingerprint: SingleFingerprint {
                     os_type: String::new(),
                 },
@@ -107,10 +120,14 @@ impl Default for ProfileManager {
         let selected_os_list: Vec<String> = fingerprint_manager.os_type[0].clone();
 
         Self {
+            installed_browsers,
+            new_profile_name: String::new(),
+            selected_browser_path: String::new(),
+
             profiles,
             open_profiles: ChromeProfiles::new(),
             selected_profile,
-            new_profile_name: String::new(),
+            
             proxy_configs,
             proxy: ProxyConfig::new(),
             selected_proxy,
@@ -154,7 +171,15 @@ impl eframe::App for ProfileManager {
         }
         self.check_handles = new_handles;
 
-        // let mut proxy_configs = proxy_manager::load_proxy_configs();
+        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Pota Browser");
+                ui.separator();
+                if ui.button("Quit").clicked() {
+                    std::process::exit(0);
+                }
+            });
+        });
 
         egui::CentralPanel::default().show(ctx, |ui| {
             

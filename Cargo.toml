@@ -3,6 +3,10 @@ name = "rust_ws"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "pota-browser"
+path = "src/main.rs"
+
 [dependencies]
 eframe = "0.30.0"
 futures = "0.3.31"

@@ -6,7 +6,7 @@ use tokio::task;
 use tungstenite::{connect, WebSocket, Message, stream::MaybeTlsStream};
 use serde_json::json;
 
-use crate::chrome::ChromeProfile;
+use crate::chromium::ChromeProfile;
 
 async fn get_socket1(profile: ChromeProfile) -> Result<WebSocket<MaybeTlsStream<TcpStream>>, Error> {
     // DevTools URL
@@ -89,8 +89,132 @@ async fn start_cdp(profile: ChromeProfile) -> Result<(), Error> {
                         "requestId": response["params"]["requestId"],
                         "headers" : [
                             {
+                                "name": "sec-ch-ua",
+                                "value": "\"Chromium\";v=\"134\", \"Not:A-Brand\";v=\"24\", \"Google Chrome\";v=\"134\""
+                            },
+                            {
+                                "name": "sec-ch-ua-platform-version",
+                                "value": "19.0.0"
+                            },
+                            {
                                 "name": "Sec-CH-UA-Platform",
-                                "value" : "Windows"
+                                "value": "\"Windows\""
+                            },
+                            {
+                                "name": "Sec-CH-UA-Platform",
+                                "value": "Chromium;v=134, Not:A-Brand;v=24, Google Chrome;v=134"
+                            },
+                            {
+                                "name": "Sec-CH-UA-Platform-Version",
+                                "value": "19.0.0"
+                            },
+                            {
+                                "name": "Sec-CH-UA-Mobile",
+                                "value": "?0"
+                            },
+                            {
+                                "name": "Sec-CH-UA-Full-Version",
+                                "value": "134.0.6998.36"
+                            },
+                            {
+                                "name": "Sec-CH-UA-Full-Version-List",
+                                "value": "Chromium;v=134.0.6998.36, Not:A-Brand;v=24.0.0.0, Google Chrome;v=134.0.6998.36"
+                            },
+                            {
+                                "name": "Sec-CH-UA-Platform",
+                                "value": "Windows"
+                            },
+                            {
+                                "name": "Sec-CH-UA-Arch",
+                                "value": "x86"
+                            },
+                            {
+                                "name": "Sec-CH-UA-Bitness",
+                                "value": "64"
+                            },
+                            {
+                                "name": "Sec-CH-UA-WoW64",
+                                "value": "?0"
+                            },
+                            {
+                                "name": "Sec-CH-UA-Model",
+                                "value": ""
+                            },
+                            {
+                                "name": "Sec-CH-UA-Form-Factors",
+                                "value": "Desktop"
+                            },
+                            {
+                                "name": "Sec-CH-Lang",
+                                "value": "not received"
+                            },
+                            {
+                                "name": "Sec-CH-Save-Data",
+                                "value": "not received"
+                            },
+                            {
+                                "name": "Sec-CH-Width",
+                                "value": "not received"
+                            },
+                            {
+                                "name": "Sec-CH-Viewport-Width",
+                                "value": "1280"
+                            },
+                            {
+                                "name": "Viewport-Width",
+                                "value": "1280"
+                            },
+                            {
+                                "name": "Sec-CH-Viewport-Height",
+                                "value": "585"
+                            },
+                            {
+                                "name": "Sec-CH-DPR",
+                                "value": "1"
+                            },
+                            {
+                                "name": "DPR",
+                                "value": "1"
+                            },
+                            {
+                                "name": "Sec-CH-Device-Memory",
+                                "value": "8"
+                            },
+                            {
+                                "name": "Device-Memory",
+                                "value": "8"
+                            },
+                            {
+                                "name": "RTT",
+                                "value": "100"
+                            },
+                            {
+                                "name": "Downlink",
+                                "value": "1.55"
+                            },
+                            {
+                                "name": "ECT",
+                                "value": "4g"
+                            },
+                            {
+                                "name": "Sec-CH-Prefers-Color-Scheme",
+                                "value": "light"
+                            },
+                            {
+                                "name": "Sec-CH-Prefers-Reduced-Motion",
+                                "value": "no-preference"
+                            },
+                            {
+                                "name": "Sec-CH-Prefers-Reduced-Transparency",
+                                "value": "no-preference"
+                            },
+                            {
+                                "name": "Sec-CH-Prefers-Contrast",
+                                "value": "not received"
+                            },
+                            {
+                                "name": "Sec-CH-Forced-Colors",
+                                "value": "not received"
                             }
                         ]
                     }

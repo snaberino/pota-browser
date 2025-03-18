@@ -4,7 +4,7 @@ Hello! This is a **very early alpha** version of a hypothetical profile manager 
 
 The aim is to use the standard browser installation and tweak it in order to avoid fingerprint restriction and bypass antibot.
 
-At the moment only Google chrome is supported.
+At the moment only Chromium based browser are supported.
 
 ## 🚧 Still a Work in Progress!
 
@@ -18,7 +18,7 @@ I’m actively developing Pota Browser, and there’s still a lot to do. If you�
 
 ### Requirements
 
-- **Google Chrome** 
+- **Chromium based browser** 
 - **Rust** 
 ### Installation & Usage
 
@@ -108,7 +108,6 @@ Intl.DateTimeFormat()
 
 ## TODO
 
-- [x] Automatic Chrome executable discovery.  
 - [ ] WebRTC **fake** spoofing (correctly spoof host & STUN IP).  
 - [ ] Spoofing all `navigator` properties (device, OS, hardware, browser, etc.).  
 - [ ] Screen size, resolution, window, and viewport property spoofing.  
