@@ -4,7 +4,7 @@ use crate::chromium::{open_chrome, save_profile_configs};
 use crate::ProfileManager;
 
 pub fn single_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
-    ui.label("PROFILE CONFIGURATION");
+    ui.heading("PROFILE CONFIGURATION");
     ui.horizontal(|ui| {
         ui.label("Select profile");
         egui::ComboBox::from_id_salt(egui::Id::new("profile_selector"))

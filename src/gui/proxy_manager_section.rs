@@ -2,7 +2,7 @@ use crate::ProfileManager;
 use eframe::egui;
 
 pub fn proxy_manager_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
-    ui.label("Proxy Manager");
+    ui.heading("PROXIES MANAGER");
     ui.horizontal(|ui| {
         egui::ComboBox::from_label("")
             .selected_text(&manager.proxy.proxy_type)
@@ -59,7 +59,7 @@ pub fn proxy_manager_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
 
     if ui.button("SAVE PROXY").clicked() {
         manager.proxy_configs.push(
-            crate::ProxyConfig {
+            crate::proxy_manager::ProxyConfig {
                 proxy_type: manager.proxy.proxy_type.clone(),
                 proxy_name: manager.proxy.proxy_name.clone(),
                 proxy_host: manager.proxy.proxy_host.clone(),

@@ -2,7 +2,7 @@ use crate::ProfileManager;
 use eframe::egui;
 
 pub fn active_profiles_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
-    ui.label("Active Profile:");
+    ui.heading("ACTIVE PROFILES");
     for profile in manager.open_profiles.clone() {
         ui.horizontal(|ui| {
             ui.label(&profile.name);

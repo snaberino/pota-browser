@@ -10,8 +10,8 @@ use futures::future::FutureExt;
 use proxy_manager::ProxiesConfig;
 use proxy_manager::ProxyConfig;
 
-use chromium::ChromeProfile;
-use chromium::ChromeProfiles;
+use chromium::ChromiumProfile;
+use chromium::ChromiumProfiles;
 
 use fingerprint_manager::FingerprintManager;
 use fingerprint_manager::SingleFingerprint;
@@ -20,9 +20,11 @@ use eframe::egui;
 
 use tokio::runtime::Builder;
 
-use std::collections::HashMap;
+// use std::collections::HashMap;
 
-mod gui {
+use crate::gui::new_profile_section::Browsers;
+
+pub mod gui {
     pub mod new_profile_section;
     pub mod single_profile_section;
     pub mod profile_list_section;
@@ -40,8 +42,11 @@ fn main() -> Result<(), eframe::Error> {
         .unwrap();
 
     runtime.block_on(async {
+        // let mut new_options= eframe::WindowAttributes::default();
         let mut options = eframe::NativeOptions::default();
         options.viewport.resizable = Some(true);
+        options.centered = true;
+        // options.decorated = false;
         eframe::run_native(
             "pota browser",
             options,
@@ -50,22 +55,25 @@ fn main() -> Result<(), eframe::Error> {
     })
 }
 
-struct ProfileManager {
-    installed_browsers: HashMap<String, String>, // Installed browsers
+pub struct ProfileManager {
+    installed_browsers: Vec<Browsers>, // Installed browsers
+    custom_browser_name: String, // Custom browser name
 
     new_profile_name: String, // Need it in order to create a new profile
     selected_browser_path: String, // Selected browser path for dropdown menu
 
-    profiles: ChromeProfiles, // All the profiles
-    open_profiles: ChromeProfiles, // Opened profiles in current runtime
-    selected_profile: ChromeProfile, // Selected profile for dropdown menu
+    profiles: ChromiumProfiles, // All the profiles
+    open_profiles: ChromiumProfiles, // Opened profiles in current runtime
+    selected_profile: ChromiumProfile, // Selected profile for dropdown menu
     
     proxy_configs: ProxiesConfig, // All the proxy configs
     selected_proxy: ProxyConfig, // Selected proxy for dropdown menu
     proxy : ProxyConfig, // Proxy struct in order to create a new proxy
-    log_message : String, // Render log messages
-
     check_handles: Vec<JoinHandle<Result<ProxyConfig, String>>>, // Background handle for checking proxies
+
+    // GUI THINGS
+    selected_section: String, // Selected section in the GUI
+    log_message: String, // Render log messages
 
     // Fingerprints zone
     fingerprint_manager: FingerprintManager, // Variable for storing all the information in order to generate a fingerprint
@@ -76,12 +84,21 @@ struct ProfileManager {
 impl Default for ProfileManager {
     fn default() -> Self {
         // Loading existing installed browsers
-        let installed_browsers = gui::new_profile_section::discover_installed_browsers();
+        let mut installed_browsers = gui::new_profile_section::discover_installed_browsers();
+
+        // Loading custom browsers
+        let custom_browsers: Vec<Browsers> = gui::new_profile_section::load_custom_browsers();
+        // Adding custom browsers avoiding duplicates with installed ones
+        for custom_browser in custom_browsers {
+            if !installed_browsers.iter().any(|browser| browser.path == custom_browser.path) {
+                installed_browsers.push(custom_browser);
+            }
+        }
 
         // Loading existing profiles
-        let profiles: ChromeProfiles = chromium::load_profile_configs();
+        let profiles: ChromiumProfiles = chromium::load_profile_configs();
         let selected_profile = profiles.get(0).cloned().unwrap_or_else(|| {
-            ChromeProfile {
+            ChromiumProfile {
                 name: "Default".to_string(),
                 browser_path: "browser_path".to_string(),
                 path: chromium::get_profile_dir("Default"),
@@ -121,18 +138,18 @@ impl Default for ProfileManager {
 
         Self {
             installed_browsers,
+            custom_browser_name: String::new(),
+
             new_profile_name: String::new(),
             selected_browser_path: String::new(),
 
             profiles,
-            open_profiles: ChromeProfiles::new(),
+            open_profiles: ChromiumProfiles::new(),
             selected_profile,
             
             proxy_configs,
             proxy: ProxyConfig::new(),
             selected_proxy,
-            log_message: String::new(),
-
             check_handles: Vec::new(),
 
             fingerprint_manager,
@@ -140,6 +157,8 @@ impl Default for ProfileManager {
                 os_type: String::new(),
             },
             selected_os_list,
+            selected_section: "profiles_manager".to_string(), // Default selected section
+            log_message: String::new(),
         }
     }
 }
@@ -171,29 +190,35 @@ impl eframe::App for ProfileManager {
         }
         self.check_handles = new_handles;
 
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.label("Pota Browser");
-                ui.separator();
-                if ui.button("Quit").clicked() {
-                    std::process::exit(0);
-                }
-            });
+        egui::SidePanel::left("side_panel").show(ctx, |ui| {
+            ui.heading("Pota Browser");
+
+            ui.separator();
+
+            // Bottoni per selezionare la sezione
+            if ui.button("New Profile").clicked() {
+                self.selected_section = "new_profile".to_string();
+            }
+            if ui.button("Profiles Manager").clicked() {
+                self.selected_section = "profiles_manager".to_string();
+            }
+            if ui.button("Proxies Manager").clicked() {
+                self.selected_section = "proxies_manager".to_string();
+            }
+
+            ui.separator();
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            
-            gui::new_profile_section::create_new_profile_section(ui, self);
-
-            gui::single_profile_section::single_profile_section(ui, self);
-
-            gui::profile_list_section::profile_list_section(ui, self);
-
-            gui::active_profiles_section::active_profiles_section(ui, self);
-
-            gui::proxy_manager_section::proxy_manager_section(ui, self);
-
-            gui::saved_proxies_section::saved_proxies_section(ui, self);
+            // Mostra la sezione selezionata
+            match self.selected_section.as_str() {
+                "new_profile" => gui::new_profile_section::create_new_profile_section(ui, self),
+                "profiles_manager" => { gui::single_profile_section::single_profile_section(ui, self); gui::profile_list_section::profile_list_section(ui, self); gui::active_profiles_section::active_profiles_section(ui, self); },
+                "proxies_manager" => { gui::proxy_manager_section::proxy_manager_section(ui, self); gui::saved_proxies_section::saved_proxies_section(ui, self) },
+                _ => {
+                    ui.label("Select a section from the side panel.");
+                },
+            }
 
             // Rendering log messages
             if !self.log_message.is_empty() {
@@ -203,6 +228,30 @@ impl eframe::App for ProfileManager {
                     ui.colored_label(egui::Color32::GREEN, &self.log_message);
                 }
             }
-        });    
+        });
+
+        // egui::CentralPanel::default().show(ctx, |ui| {
+            
+        //     gui::new_profile_section::create_new_profile_section(ui, self);
+
+        //     gui::single_profile_section::single_profile_section(ui, self);
+
+        //     gui::profile_list_section::profile_list_section(ui, self);
+
+        //     gui::active_profiles_section::active_profiles_section(ui, self);
+
+        //     gui::proxy_manager_section::proxy_manager_section(ui, self);
+
+        //     gui::saved_proxies_section::saved_proxies_section(ui, self);
+
+        //     // Rendering log messages
+        //     if !self.log_message.is_empty() {
+        //         if self.log_message.starts_with("Error") {
+        //             ui.colored_label(egui::Color32::RED, &self.log_message);
+        //         } else {
+        //             ui.colored_label(egui::Color32::GREEN, &self.log_message);
+        //         }
+        //     }
+        // });    
     }
 }

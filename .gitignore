@@ -1,8 +1,9 @@
 .obsidian
 .vscode
 target
-chrome_profiles
-chrome_profiles.json
+chromium_profiles
+chromium_profiles.json
 proxy_config.json
+custom_browsers.json
 fingerprint manager.md
 Untitled.md

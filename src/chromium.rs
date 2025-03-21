@@ -15,12 +15,12 @@ use crate::websocket;
 use crate::fingerprint_manager::SingleFingerprint;
 
 lazy_static! {
-    static ref CHROME_PROCESSES: Arc<Mutex<HashMap<String, Child>>> = Arc::new(Mutex::new(HashMap::new()));
+    static ref CHROMIUM_PROCESSES: Arc<Mutex<HashMap<String, Child>>> = Arc::new(Mutex::new(HashMap::new()));
 }
 
 // Chrome profile structure
 #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
-pub struct ChromeProfile {
+pub struct ChromiumProfile {
     pub name: String, // Profile name
     pub browser_path: String, // Browser path
     pub path: PathBuf, // Profile path folder
@@ -32,26 +32,26 @@ pub struct ChromeProfile {
     pub fingerprint: SingleFingerprint,
 }
 
-pub type ChromeProfiles = Vec<ChromeProfile>;
+pub type ChromiumProfiles = Vec<ChromiumProfile>;
 
 // Get the profile directory
 pub fn get_profile_dir(profile_name: &str) -> PathBuf {
     // I'm getting the current directory of the script
     let script_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from(""));
     let mut profile_dir = script_dir.clone();
-    profile_dir.push("chrome_profiles");
+    profile_dir.push("chromium_profiles");
     // New profile directory
     profile_dir.push(profile_name);
     profile_dir
 }
 
 // Load Chrome profiles from a JSON file
-pub fn load_profile_configs() -> ChromeProfiles {
-    let file_path = "chrome_profiles.json";
+pub fn load_profile_configs() -> ChromiumProfiles {
+    let file_path = "chromium_profiles.json";
 
     // Check if the file exists
     if !PathBuf::from(file_path).exists() {
-        let empty_profiles: ChromeProfiles = vec![];
+        let empty_profiles: ChromiumProfiles = vec![];
         save_profile_configs(&empty_profiles);
         return empty_profiles;
     }
@@ -63,7 +63,7 @@ pub fn load_profile_configs() -> ChromeProfiles {
 
     // If the file is empty, return an empty vector
     if content.trim().is_empty() {
-        let empty_profiles: ChromeProfiles = vec![];
+        let empty_profiles: ChromiumProfiles = vec![];
         save_profile_configs(&empty_profiles);
         empty_profiles
     } else {
@@ -72,13 +72,13 @@ pub fn load_profile_configs() -> ChromeProfiles {
 }
 
 // Save Chrome profiles to a JSON file
-pub fn save_profile_configs(profiles_config: &ChromeProfiles) {
-    let file = File::create("chrome_profiles.json").expect("Unable to create file");
+pub fn save_profile_configs(profiles_config: &ChromiumProfiles) {
+    let file = File::create("chromium_profiles.json").expect("Unable to create file");
     serde_json::to_writer_pretty(file, profiles_config).expect("Unable to write JSON");
 }
 
 // Open a Chrome profile
-pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
+pub fn open_chrome(profile: ChromiumProfile) -> io::Result<()> {
     println!("Opening a new Chrome profile in this directory: {}", profile.path.to_str().unwrap()); //debugging
 
     let chrome_path = profile.browser_path.clone();
@@ -126,7 +126,7 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
     // Spawn the process and store it in the CHROME_PROCESSES map in order to kill it later or other operations
     match command.spawn() {
         Ok(child) => {
-            let mut processes = CHROME_PROCESSES.lock().unwrap();
+            let mut processes = CHROMIUM_PROCESSES.lock().unwrap();
             processes.insert(profile.name.clone(), child);
 
             // Trying new way to connecto to Chrome DevTools Protocol
@@ -146,7 +146,7 @@ pub fn open_chrome(profile: ChromeProfile) -> io::Result<()> {
 }
 
 pub fn close_chrome(profile_name: &str) -> io::Result<()> {
-    let mut processes = CHROME_PROCESSES.lock().unwrap();
+    let mut processes = CHROMIUM_PROCESSES.lock().unwrap();
     if let Some(mut child) = processes.remove(profile_name) {
         if let Err(e) = child.kill() {
             eprintln!("Error while closing Chrome: {}", e);//debugging
@@ -158,7 +158,7 @@ pub fn close_chrome(profile_name: &str) -> io::Result<()> {
 }
 
 // When creating a new profile, actually i open it headless and then close it. So the whole folder structure is created.
-pub fn create_new_profile(new_profile: ChromeProfile) -> io::Result<()> {
+pub fn create_new_profile(new_profile: ChromiumProfile) -> io::Result<()> {
     println!("New path directory:{}", new_profile.path.to_str().unwrap()); //debugging
 
     // NEED TO IMPLEMENT A WAY TO CHECK IF THE PROFILE ALREADY EXISTS

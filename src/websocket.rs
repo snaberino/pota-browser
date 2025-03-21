@@ -6,9 +6,9 @@ use tokio::task;
 use tungstenite::{connect, WebSocket, Message, stream::MaybeTlsStream};
 use serde_json::json;
 
-use crate::chromium::ChromeProfile;
+use crate::chromium::ChromiumProfile;
 
-async fn get_socket1(profile: ChromeProfile) -> Result<WebSocket<MaybeTlsStream<TcpStream>>, Error> {
+async fn get_socket1(profile: ChromiumProfile) -> Result<WebSocket<MaybeTlsStream<TcpStream>>, Error> {
     // DevTools URL
     let devtools_url = format!("http://127.0.0.1:{}/json", profile.debugging_port);
 
@@ -29,7 +29,7 @@ async fn get_socket1(profile: ChromeProfile) -> Result<WebSocket<MaybeTlsStream<
 // We send the credentials to the browser, and the request is then allowed to proceed.
 // We also listen for the Fetch.requestPaused event, which is triggered when a request is paused, so this happen for every requests.
 // We then continue the request by sending the necessary spoofed headers.
-async fn start_cdp(profile: ChromeProfile) -> Result<(), Error> {
+async fn start_cdp(profile: ChromiumProfile) -> Result<(), Error> {
     let mut socket = get_socket1(profile.clone()).await.unwrap();
     let enable_fetch_cmd = json!({
         "id": 1,
@@ -227,7 +227,7 @@ async fn start_cdp(profile: ChromeProfile) -> Result<(), Error> {
     }
 }
 
-pub fn start_cdp_listener(profile: ChromeProfile) {
+pub fn start_cdp_listener(profile: ChromiumProfile) {
     task::spawn(async move {
         if let Err(e) = start_cdp(profile).await {
             eprintln!("Error while opening Chrome DevTools Protocol: {}", e);
