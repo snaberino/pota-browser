@@ -29,6 +29,7 @@ pub struct ChromiumProfile {
     pub proxy: ProxyConfig, // Proxy configuration
     pub webrtc: String, // WebRTC Spoofing
     pub custom_flags: String, // Custom flags
+    pub images: u8, // 0 = no images, 1 = load images, 2 = load only captcha images
     pub fingerprint: SingleFingerprint,
 }
 
@@ -89,6 +90,7 @@ pub fn open_chrome(profile: ChromiumProfile) -> io::Result<()> {
     command.arg(format!("--user-data-dir={}", profile.path.to_str().unwrap()));
     command.arg("--no-first-run"); // Avoid first run dialog
     command.arg("--no-default-browser-check"); // Stop browser from asking to be the default browser
+    command.arg("--hide-crash-restore-bubble"); // Disable session crashed pop up
     command.arg("--disable-features=Translate,LensStandalone,LensOverlay,LensOverlayTranslateButton,LensOverlayContextualSearchBox,LensOverlayLatencyOptimizations,LensOverlayImageContextMenuActions,LensOverlayTranslateLanguages,LensOverlaySidePanelOpenInNewTab"); // Stop browser from asking to translate pages and stop Google Lens
 
     // Add remote debugging if debugging_port is not 0

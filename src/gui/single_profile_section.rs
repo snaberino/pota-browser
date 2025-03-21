@@ -58,6 +58,41 @@ pub fn single_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
         }
     }); //  horizontal
 
+    // Images configuration
+    ui.horizontal(|ui| {
+        ui.label("Images:");
+        egui::ComboBox::from_id_salt("Block Images")
+            .selected_text(match manager.selected_profile.images {
+                0 => "Block all",
+                1 => "Allow all",
+                2 => "Allow only from CAPTCHA Providers",
+                _ => "Unknown",
+            })
+            .show_ui(ui, |ui| {
+                if ui.selectable_value(&mut manager.selected_profile.images, 0, "Block all").clicked() {
+                    if let Some(profile) = manager.profiles.iter_mut().find(|p| p.name == manager.selected_profile.name) {
+                        profile.images = 0;
+                        save_profile_configs(&manager.profiles);
+                        manager.log_message = format!("Images for profile {} set to allow all.", manager.selected_profile.name);
+                    }
+                };
+                if ui.selectable_value(&mut manager.selected_profile.images, 1, "Allow all").clicked() {
+                    if let Some(profile) = manager.profiles.iter_mut().find(|p| p.name == manager.selected_profile.name) {
+                        profile.images = 1;
+                        save_profile_configs(&manager.profiles);
+                        manager.log_message = format!("Images for profile {} set to block all.", manager.selected_profile.name);
+                    }
+                };
+                if ui.selectable_value(&mut manager.selected_profile.images, 2, "Allow only from CAPTCHA Providers").clicked() {
+                    if let Some(profile) = manager.profiles.iter_mut().find(|p| p.name == manager.selected_profile.name) {
+                        profile.images = 2;
+                        save_profile_configs(&manager.profiles);
+                        manager.log_message = format!("Images for profile {} set to allow from CAPTCHA Providers.", manager.selected_profile.name);
+                    }
+                }
+            });
+    }); // horizontal
+
     ui.horizontal(|ui| {
         ui.label("Proxy");
         egui::ComboBox::from_id_salt(egui::Id::new("proxy_selector"))

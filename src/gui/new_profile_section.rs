@@ -140,6 +140,7 @@ pub fn create_new_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManage
                     proxy: ProxyConfig::new(),
                     webrtc: String::new(),
                     custom_flags: String::new(),
+                    images: manager.selected_profile.images,
                     fingerprint: SingleFingerprint {
                         os_type: String::new(),
                     },

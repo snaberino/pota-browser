@@ -107,6 +107,7 @@ impl Default for ProfileManager {
                 proxy: ProxyConfig::new(),
                 webrtc: String::new(),
                 custom_flags: String::new(),
+                images: 1,
                 fingerprint: SingleFingerprint {
                     os_type: String::new(),
                 },
@@ -229,29 +230,6 @@ impl eframe::App for ProfileManager {
                 }
             }
         });
-
-        // egui::CentralPanel::default().show(ctx, |ui| {
-            
-        //     gui::new_profile_section::create_new_profile_section(ui, self);
-
-        //     gui::single_profile_section::single_profile_section(ui, self);
-
-        //     gui::profile_list_section::profile_list_section(ui, self);
-
-        //     gui::active_profiles_section::active_profiles_section(ui, self);
-
-        //     gui::proxy_manager_section::proxy_manager_section(ui, self);
-
-        //     gui::saved_proxies_section::saved_proxies_section(ui, self);
-
-        //     // Rendering log messages
-        //     if !self.log_message.is_empty() {
-        //         if self.log_message.starts_with("Error") {
-        //             ui.colored_label(egui::Color32::RED, &self.log_message);
-        //         } else {
-        //             ui.colored_label(egui::Color32::GREEN, &self.log_message);
-        //         }
-        //     }
-        // });    
+   
     }
 }

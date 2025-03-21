@@ -8,7 +8,7 @@ use serde_json::json;
 
 use crate::chromium::ChromiumProfile;
 
-async fn get_socket1(profile: ChromiumProfile) -> Result<WebSocket<MaybeTlsStream<TcpStream>>, Error> {
+async fn get_socket(profile: ChromiumProfile) -> Result<WebSocket<MaybeTlsStream<TcpStream>>, Error> {
     // DevTools URL
     let devtools_url = format!("http://127.0.0.1:{}/json", profile.debugging_port);
 
@@ -30,7 +30,8 @@ async fn get_socket1(profile: ChromiumProfile) -> Result<WebSocket<MaybeTlsStrea
 // We also listen for the Fetch.requestPaused event, which is triggered when a request is paused, so this happen for every requests.
 // We then continue the request by sending the necessary spoofed headers.
 async fn start_cdp(profile: ChromiumProfile) -> Result<(), Error> {
-    let mut socket = get_socket1(profile.clone()).await.unwrap();
+    let mut socket = get_socket(profile.clone()).await.unwrap();
+    
     let enable_fetch_cmd = json!({
         "id": 1,
         "method": "Fetch.enable",
@@ -44,23 +45,14 @@ async fn start_cdp(profile: ChromiumProfile) -> Result<(), Error> {
     });
     socket.send(Message::Text(enable_fetch_cmd.to_string().into())).unwrap();
 
-    let navigate_cmd = json!( {
-        "id": 2,
-        "method": "Page.navigate",
-        "params": {
-            "url": "https://browserleaks.com/client-hints"
-        }
-    });
-    socket.send(Message::Text(navigate_cmd.to_string().into())).unwrap();
-
     // Listen indefinitely for incoming messages
+    // We then handle the Fetch.authRequired event, which is triggered when a request requires authentication.
     loop {
         let msg = socket.read().expect("Error while reading incoming msg");
         if let Message::Text(text) = msg {
-            //println!("Message  recevied: {}", text); //debugging
             let response: serde_json::Value = serde_json::from_str(&text).unwrap();
             println!("Event: {}", response); //debugging
-            //println!("Method: {}", response["method"]); //debugging
+
             // Section for handling all the fetch events
             // Handle the Fetch.authRequired event required for proxy authentication
             if response["method"] == "Fetch.authRequired" {
@@ -82,144 +74,76 @@ async fn start_cdp(profile: ChromiumProfile) -> Result<(), Error> {
             // So for every request i must set concrete headers related to the whole chrome config
             } else if response["method"] == "Fetch.requestPaused" {
                 //println!("Evento Fetch.requestPaused ricevuto"); //debugging
-                let continue_request = json!({
-                    "id": 4,
-                    "method": "Fetch.continueRequest",
-                    "params": {
-                        "requestId": response["params"]["requestId"],
-                        "headers" : [
-                            {
-                                "name": "sec-ch-ua",
-                                "value": "\"Chromium\";v=\"134\", \"Not:A-Brand\";v=\"24\", \"Google Chrome\";v=\"134\""
-                            },
-                            {
-                                "name": "sec-ch-ua-platform-version",
-                                "value": "19.0.0"
-                            },
-                            {
-                                "name": "Sec-CH-UA-Platform",
-                                "value": "\"Windows\""
-                            },
-                            {
-                                "name": "Sec-CH-UA-Platform",
-                                "value": "Chromium;v=134, Not:A-Brand;v=24, Google Chrome;v=134"
-                            },
-                            {
-                                "name": "Sec-CH-UA-Platform-Version",
-                                "value": "19.0.0"
-                            },
-                            {
-                                "name": "Sec-CH-UA-Mobile",
-                                "value": "?0"
-                            },
-                            {
-                                "name": "Sec-CH-UA-Full-Version",
-                                "value": "134.0.6998.36"
-                            },
-                            {
-                                "name": "Sec-CH-UA-Full-Version-List",
-                                "value": "Chromium;v=134.0.6998.36, Not:A-Brand;v=24.0.0.0, Google Chrome;v=134.0.6998.36"
-                            },
-                            {
-                                "name": "Sec-CH-UA-Platform",
-                                "value": "Windows"
-                            },
-                            {
-                                "name": "Sec-CH-UA-Arch",
-                                "value": "x86"
-                            },
-                            {
-                                "name": "Sec-CH-UA-Bitness",
-                                "value": "64"
-                            },
-                            {
-                                "name": "Sec-CH-UA-WoW64",
-                                "value": "?0"
-                            },
-                            {
-                                "name": "Sec-CH-UA-Model",
-                                "value": ""
-                            },
-                            {
-                                "name": "Sec-CH-UA-Form-Factors",
-                                "value": "Desktop"
-                            },
-                            {
-                                "name": "Sec-CH-Lang",
-                                "value": "not received"
-                            },
-                            {
-                                "name": "Sec-CH-Save-Data",
-                                "value": "not received"
-                            },
-                            {
-                                "name": "Sec-CH-Width",
-                                "value": "not received"
-                            },
-                            {
-                                "name": "Sec-CH-Viewport-Width",
-                                "value": "1280"
-                            },
-                            {
-                                "name": "Viewport-Width",
-                                "value": "1280"
-                            },
-                            {
-                                "name": "Sec-CH-Viewport-Height",
-                                "value": "585"
-                            },
-                            {
-                                "name": "Sec-CH-DPR",
-                                "value": "1"
-                            },
-                            {
-                                "name": "DPR",
-                                "value": "1"
-                            },
-                            {
-                                "name": "Sec-CH-Device-Memory",
-                                "value": "8"
-                            },
-                            {
-                                "name": "Device-Memory",
-                                "value": "8"
-                            },
-                            {
-                                "name": "RTT",
-                                "value": "100"
-                            },
-                            {
-                                "name": "Downlink",
-                                "value": "1.55"
-                            },
-                            {
-                                "name": "ECT",
-                                "value": "4g"
-                            },
-                            {
-                                "name": "Sec-CH-Prefers-Color-Scheme",
-                                "value": "light"
-                            },
-                            {
-                                "name": "Sec-CH-Prefers-Reduced-Motion",
-                                "value": "no-preference"
-                            },
-                            {
-                                "name": "Sec-CH-Prefers-Reduced-Transparency",
-                                "value": "no-preference"
-                            },
-                            {
-                                "name": "Sec-CH-Prefers-Contrast",
-                                "value": "not received"
-                            },
-                            {
-                                "name": "Sec-CH-Forced-Colors",
-                                "value": "not received"
+                
+                // Image management
+                // Intercept the request in order to filter images
+                // TO ENHANCE: too many if statements, refactor this
+
+                if profile.images == 0 { // BLOCK ALL IMAGES
+
+                    let resource_type = response["params"]["resourceType"].as_str().unwrap();
+                    let url = response["params"]["request"]["url"].as_str().unwrap();
+
+                    if resource_type == "Image" || url.ends_with(".jpg") || url.ends_with(".png") || url.ends_with(".gif") {
+                        // Blocca la richiesta
+                        let fail_request = json!({
+                            "id": 4,
+                            "method": "Fetch.failRequest",
+                            "params": {
+                                "requestId": response["params"]["requestId"],
+                                "errorReason": "BlockedByClient"
                             }
-                        ]
+                        });
+                        socket.send(Message::Text(fail_request.to_string().into())).unwrap();
+                    } else {
+                        // Continua la richiesta normalmente
+                        let continue_request = json!({
+                            "id": 3,
+                            "method": "Fetch.continueRequest",
+                            "params": {
+                                "requestId": response["params"]["requestId"]
+                            }
+                        });
+                        socket.send(Message::Text(continue_request.to_string().into())).unwrap();
                     }
-                });
-                socket.send(Message::Text(continue_request.to_string().into())).unwrap();
+                } else if profile.images == 2 {
+                    // Blocca immagini tranne quelle dai provider di CAPTCHA
+                    let resource_type = response["params"]["resourceType"].as_str().unwrap();
+                    let url = response["params"]["request"]["url"].as_str().unwrap();
+                    let captcha_providers = vec!["recaptcha.net", "hcaptcha.com", "google.com/recaptcha"];
+                    if resource_type == "Image" && !captcha_providers.iter().any(|provider| url.contains(provider)) {
+                        let fail_request = json!({
+                            "id": 4,
+                            "method": "Fetch.failRequest",
+                            "params": {
+                                "requestId": response["params"]["requestId"],
+                                "errorReason": "BlockedByClient"
+                            }
+                        });
+                        socket.send(Message::Text(fail_request.to_string().into())).unwrap();
+                        println!("Blocked non-CAPTCHA image request: {}", url); // Debugging
+                    } else {
+                        // Continua la richiesta normalmente
+                        let continue_request = json!({
+                            "id": 3,
+                            "method": "Fetch.continueRequest",
+                            "params": {
+                                "requestId": response["params"]["requestId"]
+                            }
+                        });
+                        socket.send(Message::Text(continue_request.to_string().into())).unwrap();
+                    }
+                } else {
+                    // Continua la richiesta normalmente
+                    let continue_request = json!({
+                        "id": 3,
+                        "method": "Fetch.continueRequest",
+                        "params": {
+                            "requestId": response["params"]["requestId"]
+                        }
+                    });
+                    socket.send(Message::Text(continue_request.to_string().into())).unwrap();
+                }
             } else if response["method"] == "Runtime.evaluate" {
                 println!("Event Runtime.evaluate receveid"); //debugging
             }
@@ -227,10 +151,47 @@ async fn start_cdp(profile: ChromiumProfile) -> Result<(), Error> {
     }
 }
 
+async fn test_bot(profile: ChromiumProfile) -> Result<(), Error> {
+    println!("Testing bot"); // debugging
+    let mut socket = get_socket(profile.clone()).await.unwrap();
+
+    let enable_fetch_cmd = json!({
+        "id": 1,
+        "method": "Fetch.enable",
+        "params": {
+            "patterns": [{
+                "urlPattern": "*",
+                "requestStage": "Request",
+            }],
+            "handleAuthRequests": true
+        }
+    });
+    socket.send(Message::Text(enable_fetch_cmd.to_string().into())).unwrap();
+
+    let navigate_cmd = json!( {
+        "id": 2,
+        "method": "Page.navigate",
+        "params": {
+            "url": "https://www.google.com/recaptcha/api2/demo"
+        }
+    });
+    socket.send(Message::Text(navigate_cmd.to_string().into())).unwrap();
+    println!("message sent"); // debugging
+    Ok(())
+}
+
 pub fn start_cdp_listener(profile: ChromiumProfile) {
+    let profile_clone_for_cdp = profile.clone();
     task::spawn(async move {
-        if let Err(e) = start_cdp(profile).await {
+        if let Err(e) = start_cdp(profile_clone_for_cdp).await {
             eprintln!("Error while opening Chrome DevTools Protocol: {}", e);
+        }
+    });
+
+    let profile_clone_for_bot = profile.clone();
+    task::spawn(async move {
+        if let Err(e) = test_bot(profile_clone_for_bot).await {
+            eprintln!("Error while testing bot: {}", e);
         }
     });
 }
