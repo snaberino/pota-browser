@@ -14,6 +14,11 @@ I’m actively developing Pota Browser, and there’s still a lot to do. If you�
 ## Join
 
 - **IRC:** [irc.libera.chat #potabrowser](https://web.libera.chat/#potabrowser)  
+
+## Read about
+
+- [[Spoofing things]]
+- [[Usefull chromium args]]
 ## Usage
 
 ### Requirements
@@ -40,71 +45,6 @@ cargo run
 Currently, proxy support is implemented by passing the `--proxy-server` argument to Chrome, which only accepts the `host:port` format. To handle authentication, username and password injection is done via Chrome DevTools Protocol (CDP).
 
 This is first proxy implementation and in future may change.
-
-## Spoofing *things*
-
-
-### Spoofing HTTP User-Agent
-
-**`--user-agent="custom_user_agent"`** this method changes the UA string in the HTTPS header, but it might not alter all JavaScript-exposed properties.
-
-### WebRTC Spoofing
-
-Need to implement several types of spoofing and blocking IP detection via WebRTC.
-
-- **block**: completely disables WebRTC functionality.
-  That mode will block totally WebRTC, with **`--webrtc-ip-handling-policy=disable_non_proxied_udp`** and **`--force-webrtc-ip-handling-policy`**
-
-- **default**: spoofing and blocking IP detection via WebRTC is disabled. But if the site uses WebRTC, you will see a message about it.
-
-- fake: allow to spoof the external IP address returned by STUN servers.
-
-### Timezone Spoofing
-
-Emulation.setTimezoneOverride
-Date()
-Date().getTimezoneOffset()
-Emulation.setGeolocationOverride
-Intl.DateTimeFormat()
-
-
-## Useful Chrome Arguments
-
-- **`--lang`** & **`--accept-lang`**  
-  - These arguments override local language and accepted language  
-    - `Worker.langs`  
-    - `Navigator.lang`
-
-- **`--debugging-port`**  
-  - Enables the Chrome DevTools Protocol (CDP) port.
-
-- **`--proxy-server`**  
-  - Passes the proxy as `host:port`. Authentication is handled via CDP injection.
-
-- **`--user-data-dir`**  
-  - Specifies a path for a new Chrome profile folder. Multiple profiles can be created inside this directory, similar to standard Chrome behavior.
-
-- **`--no-first-run`**  
-  - Launches Chrome directly without showing the first-run setup prompts.
-- --no-default-browser-check
-
-- **`--no-default-browser-check`**  
-  - Launches Chrome directly without showing the first-run setup prompts.
-
-- **`--headless`**  
-  - Runs Chrome in headless mode (no graphical interface).
-
-### WebRTC args
-
-- **`--webrtc-ip-handling-policy=disable_non_proxied_udp`**  
-  - Override WebRTC IP handling policy, plus **`--force-webrtc-ip-handling-policy`** will disable WebRTC.
-
-- **`--force-webrtc-ip-handling-policy`**  
-  - Override WebRTC IP handling policy to mimic the behavior when WebRTC IP handling policy is specified in Preferences.
-
-- **`--enable-webrtc-hide-local-ips-with-mdns`** Localhost IP
-  - Starting from a recent version (around Chrome 92), the feature to hide local IP addresses via mDNS is enabled by default.
-
 
 ## TODO
 
