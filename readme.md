@@ -17,8 +17,8 @@ I’m actively developing Pota Browser, and there’s still a lot to do. If you�
 
 ## Read about
 
-- [[Spoofing things]]
-- [[Usefull chromium args]]
+- [Spoofing Things](https://github.com/snaberino/pota-browser/blob/master/docs/Spoofing%20things.md)
+- [Usefull Chromium args](https://github.com/snaberino/pota-browser/blob/master/docs/Usefull%20chromium%20args.md)
 ## Usage
 
 ### Requirements
