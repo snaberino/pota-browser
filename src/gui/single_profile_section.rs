@@ -35,11 +35,26 @@ pub fn single_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
             // Debugging port checkbox, allow user to enable or disable debugging port for the selected profile
             let mut debug_enabled = manager.selected_profile.debugging_port != 0;
             if ui.checkbox(&mut debug_enabled, "Debug Mode").changed() {
-                manager.selected_profile.debugging_port = if debug_enabled { 9222 } else { 0 };
+                // manager.selected_profile.debugging_port = if debug_enabled { 9222 } else { 0 };
+
+                if debug_enabled {
+                    // Assegna automaticamente una porta unica basata sull'indice del profilo
+                    let base_port = 9222; // Porta di partenza
+                    let profile_index = manager
+                        .profiles
+                        .iter()
+                        .position(|p| p.name == manager.selected_profile.name)
+                        .unwrap_or(0);
+                    manager.selected_profile.debugging_port = base_port + profile_index as u16;
+                } else {
+                    manager.selected_profile.debugging_port = 0;
+                }
+
                 // Update the profile in the profiles list
                 if let Some(profile) = manager.profiles.iter_mut().find(|p| p.name == manager.selected_profile.name) {
                     profile.debugging_port = manager.selected_profile.debugging_port;
                 }
+
                 save_profile_configs(&manager.profiles);
                 manager.log_message = format!("Debugging port for profile {} set to {}.", manager.selected_profile.name, manager.selected_profile.debugging_port);
             }
@@ -102,7 +117,7 @@ pub fn single_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
                 ui.selectable_value(&mut manager.selected_proxy, proxy.clone(), &proxy.proxy_name);
             }
         });
-        if ui.button("Set Proxy").clicked() {
+        if ui.button("SET PROXY").clicked() {
             manager.selected_profile.proxy = manager.selected_proxy.clone();
             manager.log_message = format!("Proxy {} set for profile {}.", manager.selected_proxy.proxy_name, manager.selected_profile.name);
             println!("Proxy selected: {:?}", manager.selected_proxy);
@@ -166,7 +181,7 @@ pub fn single_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
         // Text box for custom flags
         ui.text_edit_singleline(&mut manager.selected_profile.custom_flags);
 
-        if ui.button("Apply Flags").clicked() {
+        if ui.button("APPLY FLAGS").clicked() {
             if let Some(profile) = manager.profiles.iter_mut().find(|p| p.name == manager.selected_profile.name) {
                 profile.custom_flags = manager.selected_profile.custom_flags.clone();
                 save_profile_configs(&manager.profiles);

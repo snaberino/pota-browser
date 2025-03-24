@@ -80,6 +80,8 @@ async fn get_socket(profile: ChromiumProfile) -> Result<WebSocket<MaybeTlsStream
     Ok(socket)
 }
 
+
+// Event handlers, maybe we can move them to a separate module for CDP events handling
 // Fetch.authRequired event handler
 fn handle_auth_required(socket: &mut WebSocket<MaybeTlsStream<TcpStream>>, response: &serde_json::Value, profile: &ChromiumProfile) {
     println!("Evento Fetch.authRequired ricevuto"); // Debugging

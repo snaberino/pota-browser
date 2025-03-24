@@ -33,7 +33,7 @@ pub fn proxy_manager_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
         ui.text_edit_singleline(&mut manager.proxy.proxy_password);
     });
 
-    if ui.button("Test Proxy").clicked() {
+    if ui.button("TEST PROXY").clicked() {
         let proxy_url;
         if manager.proxy.proxy_username.is_empty() {
             proxy_url = format!(

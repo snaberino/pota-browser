@@ -56,26 +56,37 @@ fn main() -> Result<(), eframe::Error> {
 }
 
 pub struct ProfileManager {
-    installed_browsers: Vec<Browsers>, // Installed browsers
-    custom_browser_name: String, // Custom browser name
 
-    new_profile_name: String, // Need it in order to create a new profile
-    selected_browser_path: String, // Selected browser path for dropdown menu
+    // CORE THINGS
 
-    profiles: ChromiumProfiles, // All the profiles
+    installed_browsers: Vec<Browsers>, // Variable for storing all the installed browsers
+    profiles: ChromiumProfiles, // Variable for storing all the profiles
     open_profiles: ChromiumProfiles, // Opened profiles in current runtime
-    selected_profile: ChromiumProfile, // Selected profile for dropdown menu
-    
-    proxy_configs: ProxiesConfig, // All the proxy configs
-    selected_proxy: ProxyConfig, // Selected proxy for dropdown menu
+    proxy_configs: ProxiesConfig, // Variable for storing all the proxy configs
     proxy : ProxyConfig, // Proxy struct in order to create a new proxy
     check_handles: Vec<JoinHandle<Result<ProxyConfig, String>>>, // Background handle for checking proxies
 
     // GUI THINGS
+
+    // Checkboxes
+    use_custom_path: bool,
+    custom_profile_path: String,
+
+    // Edit text fields
+    custom_browser_name: String, // Custom browser name
+    new_profile_name: String, // Need it in order to create a new profile
+
+    // Dropdown menu
+    selected_browser_path: String, // Selected browser path for dropdown menu
+    selected_profile: ChromiumProfile, // Selected profile for dropdown menu
+    selected_proxy: ProxyConfig, // Selected proxy for dropdown menu
     selected_section: String, // Selected section in the GUI
+
+    // Log messages
     log_message: String, // Render log messages
 
-    // Fingerprints zone
+    // FINGERPRINT THINGS
+
     fingerprint_manager: FingerprintManager, // Variable for storing all the information in order to generate a fingerprint
     single_fingerprint: SingleFingerprint, // Variable for storing a single fingerprint to inject in profiles
     selected_os_list: Vec<String>, // To handle dropdown menu for OS selection
@@ -141,6 +152,9 @@ impl Default for ProfileManager {
             installed_browsers,
             custom_browser_name: String::new(),
 
+            use_custom_path: false,
+            custom_profile_path: String::new(),
+
             new_profile_name: String::new(),
             selected_browser_path: String::new(),
 
@@ -191,19 +205,21 @@ impl eframe::App for ProfileManager {
         }
         self.check_handles = new_handles;
 
+        ctx.request_repaint();
+
         egui::SidePanel::left("side_panel").show(ctx, |ui| {
             ui.heading("Pota Browser");
 
             ui.separator();
 
             // Bottoni per selezionare la sezione
-            if ui.button("New Profile").clicked() {
+            if ui.button("NEW PROFILE").clicked() {
                 self.selected_section = "new_profile".to_string();
             }
-            if ui.button("Profiles Manager").clicked() {
+            if ui.button("PROFILES MANAGER").clicked() {
                 self.selected_section = "profiles_manager".to_string();
             }
-            if ui.button("Proxies Manager").clicked() {
+            if ui.button("PROXIES MANAGER").clicked() {
                 self.selected_section = "proxies_manager".to_string();
             }
 

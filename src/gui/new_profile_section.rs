@@ -127,14 +127,38 @@ pub fn create_new_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManage
     });
 
     ui.horizontal(|ui| {
+        ui.checkbox(&mut manager.use_custom_path, "Use custom path");
+    
+        if manager.use_custom_path {
+            if ui.button("Select Path").clicked() {
+                if let Some(path) = FileDialog::new().pick_folder() {
+                    manager.custom_profile_path = path.to_string_lossy().to_string();
+                    manager.log_message = format!("Custom path selected: {}", manager.custom_profile_path);
+                }
+            }
+            ui.label(&manager.custom_profile_path); // Show the selected custom path
+        }
+    });
+    
+    ui.horizontal(|ui| {
         ui.add(egui::TextEdit::singleline(&mut manager.new_profile_name)); 
-
+    
         if ui.button("CREATE").clicked() {
-            if !manager.new_profile_name.trim().is_empty() {
+            if manager.selected_browser_path.is_empty() {
+                manager.log_message = "Error: Please select a browser.".to_string();
+            } else if manager.new_profile_name.trim().is_empty() {
+                manager.log_message = "Error: Provide a valid profile name.".to_string();
+            } else {
+                let profile_path = if manager.use_custom_path && !manager.custom_profile_path.is_empty() {
+                    Path::new(&manager.custom_profile_path).join(&manager.new_profile_name)
+                } else {
+                    chromium::get_profile_dir(&manager.new_profile_name)
+                };
+    
                 let new_profile = ChromiumProfile {
                     name: manager.new_profile_name.clone(),
                     browser_path: manager.selected_browser_path.clone(),
-                    path: chromium::get_profile_dir(&manager.new_profile_name.clone()),
+                    path: profile_path,
                     debugging_port: 0,
                     headless: true,
                     proxy: ProxyConfig::new(),
@@ -145,18 +169,17 @@ pub fn create_new_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManage
                         os_type: String::new(),
                     },
                 };
+    
                 manager.profiles.push(new_profile.clone());
                 match chromium::create_new_profile(new_profile.clone()) {
                     Ok(_) => manager.log_message = format!("Profile {} created successfully.", new_profile.name),
-                    Err(e) => manager.log_message = format!("Errore: {}", e),
+                    Err(e) => manager.log_message = format!("Error: {}", e),
                 }
                 chromium::save_profile_configs(&manager.profiles);
                 manager.new_profile_name.clear();
-                manager.log_message = format!("Profile {} created successfully.", new_profile.name);
-            } else {
-                manager.log_message = format!("Error: provide a valid name.");
             }
         }
     });
+
     ui.separator();
 }
