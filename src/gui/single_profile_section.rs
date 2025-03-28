@@ -1,5 +1,5 @@
 use eframe::egui;
-use crate::chromium::{open_chrome, save_profile_configs};
+use crate::chromium::chromium::{open_chrome, save_profile_configs};
 // use crate::proxy_manager::ProxyConfig;
 use crate::ProfileManager;
 
@@ -125,7 +125,7 @@ pub fn single_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
         }
     }); // horizontal
 
-    ui.label("FINGERPRINT CONFIGURATION");
+    ui.heading("FINGERPRINT CONFIGURATION");
     ui.horizontal(|ui|{
         ui.label("OS");
         egui::ComboBox::from_id_salt(egui::Id::new("os_selector"))

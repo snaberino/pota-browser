@@ -1,5 +1,5 @@
 use eframe::egui;
-use crate::chromium::{self, ChromiumProfile};
+use crate::chromium::chromium::{self, ChromiumProfile};
 use crate::proxy_manager::ProxyConfig;
 use crate::fingerprint_manager::SingleFingerprint;
 use crate::ProfileManager;

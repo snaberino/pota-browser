@@ -1,8 +1,7 @@
 use crate::ProfileManager;
 use eframe::egui;
-// use std::fs;
 
-// use crate::chromium::save_profile_configs;
+use crate::chromium::chromium::open_chrome;
 
 pub fn profile_list_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
     ui.heading("PROFILE LIST");
@@ -32,7 +31,7 @@ pub fn profile_list_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
 
                     if ui.button("START").clicked() {
                         profile.headless = false;
-                        match crate::chromium::open_chrome(profile.clone()) {
+                        match open_chrome(profile.clone()) {
                             Ok(_) => {
                                 manager.log_message = format!("Profile {} opened successfully.", profile.name);
                                 manager.open_profiles.push(profile.clone());

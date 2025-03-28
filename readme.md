@@ -1,6 +1,6 @@
 # Pota Browser
 
-Hello! This is a **very early alpha** version of a hypothetical profile manager and anti-detection browser written in Rust. It's completely open-source and experimental.
+Hello! This is a **very early alpha** version of a profiles manager and anti-detection browser written in Rust. It's completely open-source and experimental.
 
 The aim is to use the standard browser installation and tweak it in order to avoid fingerprint restriction and bypass antibot.
 
@@ -14,6 +14,7 @@ I’m actively developing Pota Browser, and there’s still a lot to do. If you�
 ## Join
 
 - **IRC:** [irc.libera.chat #potabrowser](https://web.libera.chat/#potabrowser)  
+- **Discord**: [https://discord.gg/ceythGNM](https://discord.gg/ceythGNM)
 
 ## Read about
 
@@ -40,6 +41,16 @@ cd pota-browser
 cargo run
 ``` 
 
+## Functions 
+
+- Create profiles.
+- Manage multiple chromium browser's profiles.
+- Custom profile path.
+- Manage custom chromium browser.
+- CDP man in the middle proxy (work in progress).
+- Image block.
+- WebRTC block.
+- Proxy manager.
 ## Proxy Handling
 
 Currently, proxy support is implemented by passing the `--proxy-server` argument to Chrome, which only accepts the `host:port` format. To handle authentication, username and password injection is done via Chrome DevTools Protocol (CDP).
@@ -48,10 +59,10 @@ This is first proxy implementation and in future may change.
 
 ## TODO
 
-- [ ] WebRTC **fake** spoofing (correctly spoof host & STUN IP).  
+- [ ] Socks proxy support.
+- [ ] WebRTC **fake** spoofing (correctly spoof host & STUN IP).
 - [ ] Spoofing all `navigator` properties (device, OS, hardware, browser, etc.).  
 - [ ] Screen size, resolution, window, and viewport property spoofing.  
-- [ ] Managing multiple CDP sessions.
 - [ ] Many other things. 
 
 ## References

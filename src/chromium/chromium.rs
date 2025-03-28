@@ -1,17 +1,16 @@
-use std::io::{self, Read};
+use std::io::{self, Read, BufReader};
 use std::fs::File;
-use std::io::BufReader;
 use std::path::PathBuf;
 use std::process::{ Command, Child };
-use serde::{Serialize, Deserialize};
-
-use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use crate::proxy_manager::ProxyConfig;
-use crate::websocket;
+use serde::{Serialize, Deserialize};
 
+use lazy_static::lazy_static;
+
+use crate::proxy_manager::ProxyConfig;
+use crate::chromium::websocket;
 use crate::fingerprint_manager::SingleFingerprint;
 
 lazy_static! {
@@ -134,7 +133,7 @@ pub fn open_chrome(profile: ChromiumProfile) -> io::Result<()> {
             // Trying new way to connecto to Chrome DevTools Protocol
 
             if profile.debugging_port != 0 {
-                websocket::start_cdp_listener(profile.clone());
+                websocket::cdp_main(profile.clone());
             }
 
         }

@@ -4,10 +4,11 @@ use eframe::egui;
 pub fn proxy_manager_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
     ui.heading("PROXIES MANAGER");
     ui.horizontal(|ui| {
-        egui::ComboBox::from_label("")
+        ui.label("Type:");
+        egui::ComboBox::from_id_salt("proxy_type")
             .selected_text(&manager.proxy.proxy_type)
             .show_ui(ui, |ui| {
-                ui.selectable_value(&mut manager.proxy.proxy_type, "socks5".to_string(), "socks5");
+                // ui.selectable_value(&mut manager.proxy.proxy_type, "socks5".to_string(), "socks5");
                 ui.selectable_value(&mut manager.proxy.proxy_type, "http".to_string(), "http");
                 ui.selectable_value(&mut manager.proxy.proxy_type, "https".to_string(), "https");
             });

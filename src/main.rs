@@ -1,37 +1,20 @@
-pub mod chromium;
+mod gui;
+mod chromium;
 
 pub mod proxy_manager;
-pub mod websocket;
 pub mod fingerprint_manager;
 
-use tokio::task::JoinHandle;
+use proxy_manager::{ ProxiesConfig, ProxyConfig };
+use chromium::chromium::{ ChromiumProfile, ChromiumProfiles };
+use fingerprint_manager::{ FingerprintManager, SingleFingerprint };
+use gui::new_profile_section::Browsers;
+
 use futures::future::FutureExt;
 
-use proxy_manager::ProxiesConfig;
-use proxy_manager::ProxyConfig;
-
-use chromium::ChromiumProfile;
-use chromium::ChromiumProfiles;
-
-use fingerprint_manager::FingerprintManager;
-use fingerprint_manager::SingleFingerprint;
-
-use eframe::egui;
-
+use tokio::task::JoinHandle;
 use tokio::runtime::Builder;
 
-// use std::collections::HashMap;
-
-use crate::gui::new_profile_section::Browsers;
-
-pub mod gui {
-    pub mod new_profile_section;
-    pub mod single_profile_section;
-    pub mod profile_list_section;
-    pub mod active_profiles_section;
-    pub mod proxy_manager_section;
-    pub mod saved_proxies_section;
-}
+use eframe::egui;
 
 fn main() -> Result<(), eframe::Error> {
     // Initialize the Tokio runtime
@@ -107,12 +90,12 @@ impl Default for ProfileManager {
         }
 
         // Loading existing profiles
-        let profiles: ChromiumProfiles = chromium::load_profile_configs();
+        let profiles: ChromiumProfiles = chromium::chromium::load_profile_configs();
         let selected_profile = profiles.get(0).cloned().unwrap_or_else(|| {
             ChromiumProfile {
                 name: "Default".to_string(),
                 browser_path: "browser_path".to_string(),
-                path: chromium::get_profile_dir("Default"),
+                path: chromium::chromium::get_profile_dir("Default"),
                 debugging_port: 0,
                 headless: false,
                 proxy: ProxyConfig::new(),
@@ -191,6 +174,7 @@ impl eframe::App for ProfileManager {
                             "Proxy {} checked successfully. Last IP: {}",
                             proxy_config.proxy_name, proxy_config.last_ip
                         );
+                        self.proxy_configs = proxy_manager::load_proxy_configs();
                     }
                     Ok(Err(e)) => {
                         self.log_message = format!("Error while checking proxy: {}", e);
@@ -204,8 +188,6 @@ impl eframe::App for ProfileManager {
             }
         }
         self.check_handles = new_handles;
-
-        ctx.request_repaint();
 
         egui::SidePanel::left("side_panel").show(ctx, |ui| {
             ui.heading("Pota Browser");

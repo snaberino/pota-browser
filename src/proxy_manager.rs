@@ -1,10 +1,10 @@
 use reqwest::Client;
 
 use std::time::Duration;
-use serde::{Serialize, Deserialize};
+use serde::{ Serialize, Deserialize };
 use serde_json::Value;
 use std::fs::File;
-use std::io::{BufReader, Read, Write };
+use std::io::{ BufReader, Read, Write };
 use std::path::PathBuf;
 
 use tokio::task;
@@ -20,6 +20,7 @@ struct LanguageSettings {
     accept_language: &'static str,
 }
 // I create a static mapping table for the language settings, so the map is built only once
+// Need to complete the table with the languages you need
 lazy_static! {
     static ref LANGUAGE_MAP: HashMap<&'static str, LanguageSettings> = {
         let mut map = HashMap::new();
@@ -28,6 +29,15 @@ lazy_static! {
         map.insert("FR", LanguageSettings { lang: "fr-FR", accept_language: "fr-FR,fr;q=0.9" });
         map
     };
+}
+
+fn get_language_settings(country_code: &str) -> LanguageSettings {
+    LANGUAGE_MAP.get(country_code)
+        .cloned()
+        .unwrap_or(LanguageSettings {
+            lang: "en-US",
+            accept_language: "en-US,en;q=0.9",
+        })
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
@@ -99,14 +109,7 @@ pub fn save_proxy_configs(proxy_configs: &ProxiesConfig) {
     file.write_all(json.as_bytes()).expect("Unable to write data");
 }
 
-fn get_language_settings(country_code: &str) -> LanguageSettings {
-    LANGUAGE_MAP.get(country_code)
-        .cloned()
-        .unwrap_or(LanguageSettings {
-            lang: "en-US",
-            accept_language: "en-US,en;q=0.9",
-        })
-}
+
 
 // Function to test a proxy and grabbing info about it, actually saving only IPs as last used and overall list of used IPs
 async fn check_proxy(mut proxy_config: ProxyConfig) -> Result<ProxyConfig, String> {
