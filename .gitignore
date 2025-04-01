@@ -3,6 +3,7 @@
 .idea
 target
 chromium_profiles
+Cargo.lock
 chromium_profiles.json
 proxy_config.json
 custom_browsers.json
