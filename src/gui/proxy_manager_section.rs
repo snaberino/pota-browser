@@ -1,4 +1,5 @@
 use crate::ProfileManager;
+use crate::proxy_manager::{ ProxyConfig, save_proxy_configs };
 use eframe::egui;
 
 pub fn proxy_manager_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
@@ -55,12 +56,12 @@ pub fn proxy_manager_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
         }
         println!("Proxy URL: {}", proxy_url); //debugging
 
-        crate::proxy_manager::start_check_proxy(manager.proxy.clone(), manager.proxy_configs.clone());
+        ProxyConfig::start_check_proxy(manager.proxy.clone(), manager.proxy_configs.clone());
     }
 
     if ui.button("SAVE PROXY").clicked() {
         manager.proxy_configs.push(
-            crate::proxy_manager::ProxyConfig {
+            ProxyConfig {
                 proxy_type: manager.proxy.proxy_type.clone(),
                 proxy_name: manager.proxy.proxy_name.clone(),
                 proxy_host: manager.proxy.proxy_host.clone(),
@@ -75,7 +76,7 @@ pub fn proxy_manager_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
                 used_ips: vec![],
             }
         );
-        crate::proxy_manager::save_proxy_configs(&manager.proxy_configs);
+        save_proxy_configs(&manager.proxy_configs);
         manager.log_message = format!("Proxy {} added successfully.", manager.proxy.proxy_name);
     }
 

@@ -34,154 +34,164 @@ pub struct ChromiumProfile {
 
 pub type ChromiumProfiles = Vec<ChromiumProfile>;
 
-// Get the profile directory
-pub fn get_profile_dir(profile_name: &str) -> PathBuf {
-    // I'm getting the current directory of the script
-    let script_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from(""));
-    let mut profile_dir = script_dir.clone();
-    profile_dir.push("chromium_profiles");
-    // New profile directory
-    profile_dir.push(profile_name);
-    profile_dir
-}
+impl ChromiumProfile {
 
-// Load Chrome profiles from a JSON file
-pub fn load_profile_configs() -> ChromiumProfiles {
-    let file_path = "chromium_profiles.json";
-
-    // Check if the file exists
-    if !PathBuf::from(file_path).exists() {
-        let empty_profiles: ChromiumProfiles = vec![];
-        save_profile_configs(&empty_profiles);
-        return empty_profiles;
+    pub fn new(name: &str) -> Self {
+        Self {
+            name: name.to_string(),
+            browser_path: "browser_path".to_string(),
+            path: Self::get_profile_dir(name),
+            debugging_port: 0,
+            headless: false,
+            proxy: ProxyConfig::new(),
+            webrtc: String::new(),
+            custom_flags: String::new(),
+            images: 1,
+            fingerprint: SingleFingerprint {
+                os_type: String::new(),
+            },
+        }
     }
 
-    let file = File::open(file_path).expect("Unable to open file");
-    let mut reader = BufReader::new(file);
-    let mut content = String::new();
-    reader.read_to_string(&mut content).expect("Unable to read file");
+    pub fn open_chromium(&self) -> io::Result<()> {
+        let mut command = Command::new(&self.browser_path);
+        
+        self.add_extra_args(&mut command);
+        self.add_debugging_port(&mut command);
+        self.add_headless_flag(&mut command);
+        self.add_proxy_settings(&mut command);
+        self.add_webrtc_settings(&mut command);
+        self.add_custom_flags(&mut command);
 
-    // If the file is empty, return an empty vector
-    if content.trim().is_empty() {
-        let empty_profiles: ChromiumProfiles = vec![];
-        save_profile_configs(&empty_profiles);
-        empty_profiles
-    } else {
-        serde_json::from_str(&content).expect("Unable to parse JSON")
-    }
-}
+        // command.arg(format!("--proxy-server={}", "socks5://127.0.0.1:3000"));
+        // command.arg("--host-resolver-rules=\"MAP * ~NOTFOUND , EXCLUDE 127.0.0.1\"");
 
-// Save Chrome profiles to a JSON file
-pub fn save_profile_configs(profiles_config: &ChromiumProfiles) {
-    let file = File::create("chromium_profiles.json").expect("Unable to create file");
-    serde_json::to_writer_pretty(file, profiles_config).expect("Unable to write JSON");
-}
 
-// Open a Chrome profile
-pub fn open_chrome(profile: ChromiumProfile) -> io::Result<()> {
-    println!("Opening a new Chrome profile in this directory: {}", profile.path.to_str().unwrap()); //debugging
+    // Spawn the process and store it in the CHROMIUM_PROCESSES map in order to kill it later or other operations
+        match command.spawn() {
+            Ok(child) => {
+                let mut processes = CHROMIUM_PROCESSES.lock().unwrap();
+                processes.insert(self.name.clone(), child);
 
-    let chrome_path = profile.browser_path.clone();
+                // MIT for Chrome DevTools Protocol
 
-    // Building the command to open Chrome with all the necessary arguments
-    let mut command = Command::new(chrome_path);
+                if self.debugging_port != 0 {
+                    websocket::cdp_main(self.clone());
+                }
 
-    command.arg(format!("--user-data-dir={}", profile.path.to_str().unwrap()));
-    command.arg("--no-first-run"); // Avoid first run dialog
-    command.arg("--no-default-browser-check"); // Stop browser from asking to be the default browser
-    command.arg("--hide-crash-restore-bubble"); // Disable session crashed pop up
-    command.arg("--disable-features=Translate,LensStandalone,LensOverlay,LensOverlayTranslateButton,LensOverlayContextualSearchBox,LensOverlayLatencyOptimizations,LensOverlayImageContextMenuActions,LensOverlayTranslateLanguages,LensOverlaySidePanelOpenInNewTab"); // Stop browser from asking to translate pages and stop Google Lens
-
-    // Add remote debugging if debugging_port is not 0
-    if profile.debugging_port != 0 {
-        command.arg(format!("--remote-debugging-port={}", profile.debugging_port));
-    }
-    // Headless mode
-    if profile.headless == true {
-        command.arg("--headless");
-    }
-    // Proxy server argument name if it's configured we use the proxy, need to refactor this because if name is empty but other proxy parameters are set it will not work
-    // When proxy is active i need to set extra arguments to Chrome for --lang and --accept-language
-    if profile.proxy.proxy_name != "" {
-        command.arg(format!("--proxy-server={}://{}:{}",
-            profile.proxy.proxy_type,
-            profile.proxy.proxy_host,
-            profile.proxy.proxy_port
-        ));
-        command.arg(format!("--lang={}", profile.proxy.lang_arg));
-        command.arg(format!("--accept-lang={}", profile.proxy.accept_language_arg));
-    }
-
-    // WebRRTC Spoofing options
-
-    if profile.webrtc == "block" {
-        command.arg("--webrtc-ip-handling-policy=disable_non_proxied_udp");
-        command.arg("--force-webrtc-ip-handling-policy");
-    }
-
-    // Custom flags option
-    if profile.custom_flags != "" {
-        command.arg(&profile.custom_flags);
-    }
-
-    // Spawn the process and store it in the CHROME_PROCESSES map in order to kill it later or other operations
-    match command.spawn() {
-        Ok(child) => {
-            let mut processes = CHROMIUM_PROCESSES.lock().unwrap();
-            processes.insert(profile.name.clone(), child);
-
-            // Trying new way to connecto to Chrome DevTools Protocol
-
-            if profile.debugging_port != 0 {
-                websocket::cdp_main(profile.clone());
             }
-
+            Err(e) => {
+                eprintln!("Error while opening Chrome: {}", e); //debugging
+            }
         }
-        Err(e) => {
-            eprintln!("Error while opening Chrome: {}", e); //debugging
+        println!("Chrome opened successfully!"); //debugging
+        Ok(())
+    }
+
+    pub fn close_chromium(&self) -> io::Result<()> {
+        let mut processes = CHROMIUM_PROCESSES.lock().unwrap();
+        if let Some(mut child) = processes.remove(&self.name) {
+            if let Err(e) = child.kill() {
+                eprintln!("Error while closing Chrome: {}", e);//debugging
+            }
+        } else {
+            eprintln!("No path found for profile with name: {}", self.name);//debugging
+        }
+        Ok(())
+    }
+
+    pub fn create_chromium(&self) -> io::Result<()> {
+        println!("Creating new profile: {}", self.name);
+
+        self.open_chromium()?;
+        self.close_chromium()?;
+
+        Ok(())
+    }
+
+    pub fn load_profile_configs() -> ChromiumProfiles {
+        let file_path = "chromium_profiles.json";
+
+        // Check if the file exists
+        if !PathBuf::from(file_path).exists() {
+            let empty_profiles: ChromiumProfiles = vec![];
+            ChromiumProfile::save_profile_configs(&empty_profiles);
+            return empty_profiles;
+        }
+
+        let file = File::open(file_path).expect("Unable to open file");
+        let mut reader = BufReader::new(file);
+        let mut content = String::new();
+        reader.read_to_string(&mut content).expect("Unable to read file");
+
+        // If the file is empty, return an empty vector
+        if content.trim().is_empty() {
+            let empty_profiles: ChromiumProfiles = vec![];
+            ChromiumProfile::save_profile_configs(&empty_profiles);
+            empty_profiles
+        } else {
+            serde_json::from_str(&content).expect("Unable to parse JSON")
         }
     }
-    println!("Chrome opened successfully!"); //debugging
 
-    Ok(())
-}
-
-pub fn close_chrome(profile_name: &str) -> io::Result<()> {
-    let mut processes = CHROMIUM_PROCESSES.lock().unwrap();
-    if let Some(mut child) = processes.remove(profile_name) {
-        if let Err(e) = child.kill() {
-            eprintln!("Error while closing Chrome: {}", e);//debugging
-        }
-    } else {
-        eprintln!("No path found for profile with name: {}", profile_name);//debugging
+    pub fn save_profile_configs(profiles_config: &ChromiumProfiles) {
+        let file = File::create("chromium_profiles.json").expect("Unable to create file");
+        serde_json::to_writer_pretty(file, profiles_config).expect("Unable to write JSON");
     }
-    Ok(())
-}
 
-// When creating a new profile, actually i open it headless and then close it. So the whole folder structure is created.
-pub fn create_new_profile(new_profile: ChromiumProfile) -> io::Result<()> {
-    println!("New path directory:{}", new_profile.path.to_str().unwrap()); //debugging
+    pub fn get_profile_dir(profile_name: &str) -> PathBuf {
+        // I'm getting the current directory of the script
+        let script_dir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from(""));
+        let mut profile_dir = script_dir.clone();
+        profile_dir.push("chromium_profiles");
+        // New profile directory
+        profile_dir.push(profile_name);
+        profile_dir
+    }
 
-    // NEED TO IMPLEMENT A WAY TO CHECK IF THE PROFILE ALREADY EXISTS
+    // Helper functions
 
-    match open_chrome(new_profile.clone()) {
-        Ok(_) => {
-            println!("Chrome opened successfully!");
+    fn add_extra_args(&self, command: &mut Command) {
+        command.arg(format!("--user-data-dir={}", self.path.to_str().unwrap()));
+        command.arg("--no-first-run");
+        command.arg("--no-default-browser-check");
+        command.arg("--hide-crash-restore-bubble");
+        command.arg("--disable-features=Translate,LensStandalone,LensOverlay,LensOverlayTranslateButton,LensOverlayContextualSearchBox,LensOverlayLatencyOptimizations,LensOverlayImageContextMenuActions,LensOverlayTranslateLanguages,LensOverlaySidePanelOpenInNewTab");
+    }
+
+    fn add_debugging_port(&self, command: &mut Command) {
+        if self.debugging_port != 0 {
+            command.arg(format!("--remote-debugging-port={}", self.debugging_port));
         }
-        Err(e) => {
-            eprintln!("Error while opening Chrome: {}", e);
-        }
-    };
+    }
 
-    match close_chrome(&new_profile.name) {
-        Ok(_) => {
-            println!("Chrome closed successfully!");
+    fn add_headless_flag(&self, command: &mut Command) {
+        if self.headless {
+            command.arg("--headless");
         }
-        Err(e) => {
-            eprintln!("Error while closing Chrome: {}", e);
+    }
+
+    fn add_proxy_settings(&self, command: &mut Command) {
+        if !self.proxy.proxy_name.is_empty() {
+            command.arg(format!(
+                "--proxy-server={}://{}:{}",
+                self.proxy.proxy_type, self.proxy.proxy_host, self.proxy.proxy_port
+            ));
+            command.arg(format!("--lang={}", self.proxy.lang_arg));
+            command.arg(format!("--accept-lang={}", self.proxy.accept_language_arg));
         }
+    }
 
-    };
+    fn add_webrtc_settings(&self, command: &mut Command) {
+        if self.webrtc == "block" {
+            command.arg("--webrtc-ip-handling-policy=disable_non_proxied_udp");
+            command.arg("--force-webrtc-ip-handling-policy");
+        }
+    }
 
-    Ok(())
+    fn add_custom_flags(&self, command: &mut Command) {
+        if !self.custom_flags.is_empty() {
+            command.arg(&self.custom_flags);
+        }
+    }
 }

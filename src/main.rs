@@ -4,7 +4,7 @@ mod chromium;
 pub mod proxy_manager;
 pub mod fingerprint_manager;
 
-use proxy_manager::{ ProxiesConfig, ProxyConfig };
+use proxy_manager::{ProxiesConfig, ProxyConfig, load_proxy_configs };
 use chromium::chromium::{ ChromiumProfile, ChromiumProfiles };
 use fingerprint_manager::{ FingerprintManager, SingleFingerprint };
 use gui::new_profile_section::Browsers;
@@ -90,44 +90,14 @@ impl Default for ProfileManager {
         }
 
         // Loading existing profiles
-        let profiles: ChromiumProfiles = chromium::chromium::load_profile_configs();
-        let selected_profile = profiles.get(0).cloned().unwrap_or_else(|| {
-            ChromiumProfile {
-                name: "Default".to_string(),
-                browser_path: "browser_path".to_string(),
-                path: chromium::chromium::get_profile_dir("Default"),
-                debugging_port: 0,
-                headless: false,
-                proxy: ProxyConfig::new(),
-                webrtc: String::new(),
-                custom_flags: String::new(),
-                images: 1,
-                fingerprint: SingleFingerprint {
-                    os_type: String::new(),
-                },
-            }
-        });
+        let profiles = ChromiumProfile::load_profile_configs();
+        let selected_profile = profiles.get(0).cloned().unwrap_or_else(|| { ChromiumProfile::new("-") });
 
         // Loading existing proxy configs	
-        let proxy_configs: ProxiesConfig = proxy_manager::load_proxy_configs();
-        let selected_proxy = proxy_configs.get(0).cloned().unwrap_or_else(|| {
-            ProxyConfig {
-                proxy_name: "Default".to_string(),
-                proxy_type: "socks5".to_string(),
-                proxy_host: "host".to_string(),
-                proxy_port: "port".to_string(),
-                proxy_username: "username".to_string(),
-                proxy_password: "password".to_string(),
+        let proxy_configs: ProxiesConfig = load_proxy_configs();
+        let selected_proxy = proxy_configs.get(0).cloned().unwrap_or_else(|| { ProxyConfig::new() });
 
-                country: String::new(),
-                lang_arg: String::new(),
-                accept_language_arg: String::new(),
-                last_ip: String::new(),
-                used_ips: vec![],
-            }
-        });
-
-        // Loading fingerprint manager
+        // Loading fingerprint manager just for reference, at the moment nothing done
         let fingerprint_manager: FingerprintManager = fingerprint_manager::load_fingerprint_manger();
         let selected_os_list: Vec<String> = fingerprint_manager.os_type[0].clone();
 
@@ -174,7 +144,7 @@ impl eframe::App for ProfileManager {
                             "Proxy {} checked successfully. Last IP: {}",
                             proxy_config.proxy_name, proxy_config.last_ip
                         );
-                        self.proxy_configs = proxy_manager::load_proxy_configs();
+                        self.proxy_configs = load_proxy_configs();
                     }
                     Ok(Err(e)) => {
                         self.log_message = format!("Error while checking proxy: {}", e);
@@ -194,7 +164,7 @@ impl eframe::App for ProfileManager {
 
             ui.separator();
 
-            // Bottoni per selezionare la sezione
+            // Side panel buttons for navigation
             if ui.button("NEW PROFILE").clicked() {
                 self.selected_section = "new_profile".to_string();
             }
@@ -209,7 +179,7 @@ impl eframe::App for ProfileManager {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            // Mostra la sezione selezionata
+            // Show the selected section based on the button clicked
             match self.selected_section.as_str() {
                 "new_profile" => gui::new_profile_section::create_new_profile_section(ui, self),
                 "profiles_manager" => { gui::single_profile_section::single_profile_section(ui, self); gui::profile_list_section::profile_list_section(ui, self); gui::active_profiles_section::active_profiles_section(ui, self); },

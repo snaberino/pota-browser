@@ -1,5 +1,5 @@
 use eframe::egui;
-use crate::chromium::chromium::{self, ChromiumProfile};
+use crate::chromium::chromium::ChromiumProfile;
 use crate::proxy_manager::ProxyConfig;
 use crate::fingerprint_manager::SingleFingerprint;
 use crate::ProfileManager;
@@ -71,13 +71,13 @@ pub fn create_new_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManage
     // Button to add a custom browser
     ui.horizontal(|ui| {
         ui.label("Custom Browser Name:");
-        ui.add(egui::TextEdit::singleline(&mut manager.custom_browser_name)); // Usa il campo di ProfileManager
+        ui.add(egui::TextEdit::singleline(&mut manager.custom_browser_name));
     
         if ui.button("Add Custom Browser").clicked() {
             if let Some(file) = FileDialog::new().add_filter("Executable", &["exe"]).pick_file() {
                 let custom_browser = Browsers {
                     name: if manager.custom_browser_name.trim().is_empty() {
-                        "Custom Browser".to_string() // Nome predefinito se l'utente non inserisce nulla
+                        "Custom Browser".to_string()
                     } else {
                         manager.custom_browser_name.clone()
                     },
@@ -91,7 +91,7 @@ pub fn create_new_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManage
                 } else {
                     manager.log_message = format!("Browser already exists: {}", custom_browser.path);
                 }
-                manager.custom_browser_name.clear(); // Pulisce il campo dopo l'aggiunta
+                manager.custom_browser_name.clear(); // Clear the input field
             }
         }
     });
@@ -152,7 +152,7 @@ pub fn create_new_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManage
                 let profile_path = if manager.use_custom_path && !manager.custom_profile_path.is_empty() {
                     Path::new(&manager.custom_profile_path).join(&manager.new_profile_name)
                 } else {
-                    chromium::get_profile_dir(&manager.new_profile_name)
+                    ChromiumProfile::get_profile_dir(&manager.new_profile_name)
                 };
     
                 let new_profile = ChromiumProfile {
@@ -171,11 +171,11 @@ pub fn create_new_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManage
                 };
     
                 manager.profiles.push(new_profile.clone());
-                match chromium::create_new_profile(new_profile.clone()) {
+                match ChromiumProfile::create_chromium(&new_profile.clone()) {
                     Ok(_) => manager.log_message = format!("Profile {} created successfully.", new_profile.name),
                     Err(e) => manager.log_message = format!("Error: {}", e),
                 }
-                chromium::save_profile_configs(&manager.profiles);
+                ChromiumProfile::save_profile_configs(&manager.profiles);
                 manager.new_profile_name.clear();
             }
         }

@@ -1,17 +1,19 @@
 use reqwest::Client;
 
-use std::time::Duration;
-use serde::{ Serialize, Deserialize };
 use serde_json::Value;
+use serde::{ Serialize, Deserialize };
+
 use std::fs::File;
-use std::io::{ BufReader, Read, Write };
 use std::path::PathBuf;
+use std::time::Duration;
+use std::collections::HashMap;
+use std::io::{ BufReader, Read, Write };
 
 use tokio::task;
 use tokio::task::JoinHandle;
 
 use lazy_static::lazy_static;
-use std::collections::HashMap;
+
 
 // Structure for the language settings in the BCP 47 format
 #[derive(Clone)]
@@ -59,6 +61,7 @@ pub struct ProxyConfig {
 pub type ProxiesConfig = Vec<ProxyConfig>;
 
 impl ProxyConfig {
+
     pub fn new() -> Self {
         ProxyConfig {
             proxy_name: "".to_string(),
@@ -74,6 +77,74 @@ impl ProxyConfig {
             used_ips: vec![],
         }
     }
+
+    // Function to test a proxy and grabbing info about it, actually saving only IPs as last used and overall list of used IPs
+    pub async fn check_proxy(mut self) -> Result<Self, String> {
+        let proxy_url = format!(
+            "{}://{}:{}@{}:{}",
+            self.proxy_type,
+            self.proxy_username,
+            self.proxy_password,
+            self.proxy_host,
+            self.proxy_port
+        );
+        let client = Client::builder()
+            .proxy(reqwest::Proxy::all(proxy_url).map_err(|e| e.to_string())?)
+            .timeout(Duration::from_secs(10))
+            .build()
+            .map_err(|e| e.to_string())?;
+
+        match client.get("https://ipinfo.io/json").send().await {
+            Ok(response) => {
+                if let Ok(json) = response.json::<Value>().await {
+                    // Saving the last IP
+                    println!("{:?}", json); // debugging
+                    let ip = json["ip"].as_str().unwrap_or("Unknown IP").to_string();
+                    self.last_ip = ip.clone();
+
+                    if !self.used_ips.contains(&ip) {
+                        self.used_ips.push(ip.clone());
+                    }
+
+                    // Saving the country
+                    let country: String = json["country"].as_str().unwrap_or("Unknown Country").to_string();
+                    self.country = country.clone();
+
+                    // Gathering --lang and --accept-language arguments for Chrome based on the country
+                    let settings = get_language_settings(&country);
+                    self.lang_arg = settings.lang.to_string();
+                    self.accept_language_arg = settings.accept_language.to_string();
+
+                    Ok(self)
+                } else {
+                    Err("Error parsing the response.".to_string())
+                }
+            }
+            Err(e) => Err(e.to_string()),
+        }
+    }
+
+    pub fn start_check_proxy(self, proxies_config: ProxiesConfig) -> JoinHandle<Result<Self, String>> {
+        task::spawn(async move {
+            match self.check_proxy().await {
+                Ok(proxy_config) => {
+                    println!("Proxy checked successfully: {:?}", proxy_config); // debugging
+                    if let Some(existing_proxy) = proxies_config.iter().position(|p| p.proxy_name == proxy_config.proxy_name) {
+                        let mut proxies_config = proxies_config.clone();
+                        proxies_config[existing_proxy] = proxy_config.clone();
+                        save_proxy_configs(&proxies_config);
+                    }
+                    Ok(proxy_config)
+                }
+                Err(e) => {
+                    eprintln!("Error while checking the proxy: {}", e);
+                    Err(e)
+                }
+            }
+        })
+    }
+
+    
 }
 
 // PROXY MANAGER UTIL FUNCTIONS
@@ -107,72 +178,4 @@ pub fn save_proxy_configs(proxy_configs: &ProxiesConfig) {
     let json = serde_json::to_string_pretty(proxy_configs).expect("Unable to serialize proxy configs");
     let mut file = File::create("proxy_config.json").expect("Unable to create file");
     file.write_all(json.as_bytes()).expect("Unable to write data");
-}
-
-
-
-// Function to test a proxy and grabbing info about it, actually saving only IPs as last used and overall list of used IPs
-async fn check_proxy(mut proxy_config: ProxyConfig) -> Result<ProxyConfig, String> {
-    let proxy_url = format!(
-        "{}://{}:{}@{}:{}",
-        proxy_config.proxy_type,
-        proxy_config.proxy_username,
-        proxy_config.proxy_password,
-        proxy_config.proxy_host,
-        proxy_config.proxy_port
-    );
-    let client = Client::builder()
-        .proxy(reqwest::Proxy::all(proxy_url).map_err(|e| e.to_string())?)
-        .timeout(Duration::from_secs(10))
-        .build()
-        .map_err(|e| e.to_string())?;
-
-    match client.get("https://ipinfo.io/json").send().await {
-        Ok(response) => {
-            if let Ok(json) = response.json::<Value>().await {
-                // Saving the last IP
-                println!("{:?}", json); //debugging
-                let ip = json["ip"].as_str().unwrap_or("Unknown IP").to_string();
-                proxy_config.last_ip = ip.clone();
-
-                if !proxy_config.used_ips.contains(&ip) {
-                    proxy_config.used_ips.push(ip.clone());
-                }
-
-                // Saving the country
-                let country: String = json["country"].as_str().unwrap_or("Unknown Country").to_string();
-                proxy_config.country = country.clone();
-
-                // Gathering --lang and --accept-language arguments for Chrome based on the country
-                let settings = get_language_settings(&country);
-                proxy_config.lang_arg = settings.lang.to_string();
-                proxy_config.accept_language_arg = settings.accept_language.to_string();
-        
-                Ok(proxy_config.clone())
-            } else {
-                Err("Error parsing the response.".to_string())
-            }
-        }
-        Err(e) => Err(e.to_string()),
-    }
-}
-
-pub fn start_check_proxy(proxy_config: ProxyConfig, proxies_config: ProxiesConfig) -> JoinHandle<Result<ProxyConfig, String>> {
-    task::spawn(async move {
-        match check_proxy(proxy_config).await {
-            Ok(proxy_config) => {
-                println!("Proxy checked successfully: {:?}", proxy_config); // debugging
-                if let Some(existing_proxy) = proxies_config.iter().position(|p| p.proxy_name == proxy_config.proxy_name) {
-                    let mut proxies_config = proxies_config.clone();
-                    proxies_config[existing_proxy] = proxy_config.clone();
-                    save_proxy_configs(&proxies_config);
-                }
-                Ok(proxy_config)
-            }
-            Err(e) => {
-                eprintln!("Error while checking the proxy: {}", e);
-                Err(e)
-            }
-        }
-    })
 }

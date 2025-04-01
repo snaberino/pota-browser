@@ -1,5 +1,6 @@
 .obsidian
 .vscode
+.idea
 target
 chromium_profiles
 chromium_profiles.json

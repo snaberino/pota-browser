@@ -1,6 +1,8 @@
 use eframe::egui;
-use crate::chromium::chromium::{open_chrome, save_profile_configs};
-// use crate::proxy_manager::ProxyConfig;
+use crate::chromium::chromium::ChromiumProfile;
+
+use crate::gui::render_util::{ render_webrtc_dropdown, render_headless_checkbox, render_debug_checkbox };
+
 use crate::ProfileManager;
 
 pub fn single_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
@@ -23,7 +25,8 @@ pub fn single_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
             manager.log_message = "No profile found.".to_string();
         } else {
             if ui.button("OPEN").clicked() {
-                match open_chrome(manager.selected_profile.clone()) {
+
+                match ChromiumProfile::open_chromium(&manager.selected_profile) {
                     Ok(_) => {
                         manager.log_message = format!("Profile {} opened successfully.", manager.selected_profile.name);
                         manager.open_profiles.push(manager.selected_profile.clone());
@@ -31,47 +34,17 @@ pub fn single_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
                     Err(e) => manager.log_message = format!("Error: {}", e),
                 };
             }
-            
-            // Debugging port checkbox, allow user to enable or disable debugging port for the selected profile
-            let mut debug_enabled = manager.selected_profile.debugging_port != 0;
-            if ui.checkbox(&mut debug_enabled, "Debug Mode").changed() {
-                // manager.selected_profile.debugging_port = if debug_enabled { 9222 } else { 0 };
-
-                if debug_enabled {
-                    // Assegna automaticamente una porta unica basata sull'indice del profilo
-                    let base_port = 9222; // Porta di partenza
-                    let profile_index = manager
-                        .profiles
-                        .iter()
-                        .position(|p| p.name == manager.selected_profile.name)
-                        .unwrap_or(0);
-                    manager.selected_profile.debugging_port = base_port + profile_index as u16;
-                } else {
-                    manager.selected_profile.debugging_port = 0;
-                }
-
-                // Update the profile in the profiles list
-                if let Some(profile) = manager.profiles.iter_mut().find(|p| p.name == manager.selected_profile.name) {
-                    profile.debugging_port = manager.selected_profile.debugging_port;
-                }
-
-                save_profile_configs(&manager.profiles);
-                manager.log_message = format!("Debugging port for profile {} set to {}.", manager.selected_profile.name, manager.selected_profile.debugging_port);
-            }
-            
-            // Checkbox per headless mode, allow user to enable or disable headless mode for the selected profile
-            let mut headless_enabled = manager.selected_profile.headless;
-            if ui.checkbox(&mut headless_enabled, "Headless Mode").changed() {
-                manager.selected_profile.headless = if headless_enabled { true } else { false };
-                if let Some(profile) = manager.profiles.iter_mut().find(|p| p.name == manager.selected_profile.name) {
-                    profile.headless = manager.selected_profile.headless;
-                }
-                save_profile_configs(&manager.profiles);
-                manager.log_message = format!("Headless mode for profile {} set to {}.", manager.selected_profile.name, manager.selected_profile.headless);
-            }
-
         }
     }); //  horizontal
+    ui.horizontal(|ui| {
+        ui.label("Headless mode:");
+        render_headless_checkbox( ui, &mut manager.selected_profile, &mut manager.profiles, &mut manager.log_message );
+    });
+
+    ui.horizontal(|ui| {
+        ui.label("Debugging mode:");
+        render_debug_checkbox(ui, &mut manager.selected_profile, &mut manager.profiles, &mut manager.log_message);
+    });
 
     // Images configuration
     ui.horizontal(|ui| {
@@ -87,21 +60,21 @@ pub fn single_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
                 if ui.selectable_value(&mut manager.selected_profile.images, 0, "Block all").clicked() {
                     if let Some(profile) = manager.profiles.iter_mut().find(|p| p.name == manager.selected_profile.name) {
                         profile.images = 0;
-                        save_profile_configs(&manager.profiles);
+                        ChromiumProfile::save_profile_configs(&manager.profiles);
                         manager.log_message = format!("Images for profile {} set to allow all.", manager.selected_profile.name);
                     }
                 };
                 if ui.selectable_value(&mut manager.selected_profile.images, 1, "Allow all").clicked() {
                     if let Some(profile) = manager.profiles.iter_mut().find(|p| p.name == manager.selected_profile.name) {
                         profile.images = 1;
-                        save_profile_configs(&manager.profiles);
+                        ChromiumProfile::save_profile_configs(&manager.profiles);
                         manager.log_message = format!("Images for profile {} set to block all.", manager.selected_profile.name);
                     }
                 };
                 if ui.selectable_value(&mut manager.selected_profile.images, 2, "Allow only from CAPTCHA Providers").clicked() {
                     if let Some(profile) = manager.profiles.iter_mut().find(|p| p.name == manager.selected_profile.name) {
                         profile.images = 2;
-                        save_profile_configs(&manager.profiles);
+                        ChromiumProfile::save_profile_configs(&manager.profiles);
                         manager.log_message = format!("Images for profile {} set to allow from CAPTCHA Providers.", manager.selected_profile.name);
                     }
                 }
@@ -151,28 +124,14 @@ pub fn single_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
 
     // Dropdown menu for WebRTC IP handling
     ui.horizontal(|ui| {    
-        // Store the old value
-        let old_webrtc = manager.selected_profile.webrtc.clone();
-        ui.label("WebRTC");
-        egui::ComboBox::from_id_salt(egui::Id::new("webrtc_spoofing_selector"))
-            .selected_text(&manager.selected_profile.webrtc)
-            .show_ui(ui, |ui| {
-                ui.selectable_value(&mut manager.selected_profile.webrtc, "default".to_string(), "default");
-                ui.selectable_value(&mut manager.selected_profile.webrtc, "fake".to_string(), "fake");
-                ui.selectable_value(&mut manager.selected_profile.webrtc, "block".to_string(), "block");
-            });
-        // Update only if changed
-        if old_webrtc != manager.selected_profile.webrtc {
-            if let Some(profile) = manager.profiles.iter_mut().find(|p| p.name == manager.selected_profile.name) {
-                profile.webrtc = manager.selected_profile.webrtc.clone();
-                save_profile_configs(&manager.profiles);
-                manager.log_message = format!(
-                    "WebRTC spoofing for profile {} set to {}.",
-                    manager.selected_profile.name,
-                    manager.selected_profile.webrtc
-                );
-            }
-        }
+
+        render_webrtc_dropdown(
+            ui,
+            &mut manager.selected_profile.webrtc,
+            &manager.selected_profile.name,
+            &mut manager.profiles,
+            &mut manager.log_message,
+        );
     });
 
     // Custom FLAG
@@ -184,7 +143,7 @@ pub fn single_profile_section(ui: &mut egui::Ui, manager: &mut ProfileManager) {
         if ui.button("APPLY FLAGS").clicked() {
             if let Some(profile) = manager.profiles.iter_mut().find(|p| p.name == manager.selected_profile.name) {
                 profile.custom_flags = manager.selected_profile.custom_flags.clone();
-                save_profile_configs(&manager.profiles);
+                ChromiumProfile::save_profile_configs(&manager.profiles);
                 manager.log_message = format!(
                     "Custom flags for profile {} set to: {}",
                     manager.selected_profile.name,

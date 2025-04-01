@@ -2632,7 +2632,6 @@ dependencies = [
  "tokio",
  "tokio-socks",
  "tungstenite",
- "url",
 ]
 
 [[package]]
