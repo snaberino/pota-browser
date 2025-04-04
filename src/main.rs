@@ -11,6 +11,8 @@ use gui::new_profile_section::Browsers;
 
 use futures::future::FutureExt;
 
+use std::collections::HashMap;
+
 use tokio::task::JoinHandle;
 use tokio::runtime::Builder;
 
@@ -66,6 +68,7 @@ pub struct ProfileManager {
     selected_section: String, // Selected section in the GUI
 
     // Log messages
+    cdp_log_messages: HashMap<String, Vec<String>>,
     log_message: String, // Render log messages
 
     // FINGERPRINT THINGS
@@ -126,6 +129,8 @@ impl Default for ProfileManager {
             },
             selected_os_list,
             selected_section: "profiles_manager".to_string(), // Default selected section
+
+            cdp_log_messages: HashMap::new(),
             log_message: String::new(),
         }
     }

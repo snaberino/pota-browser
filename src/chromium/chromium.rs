@@ -63,7 +63,7 @@ impl ChromiumProfile {
         self.add_webrtc_settings(&mut command);
         self.add_custom_flags(&mut command);
 
-        // command.arg(format!("--proxy-server={}", "socks5://127.0.0.1:3000"));
+        // command.arg(format!("--proxy-server={}", "http://127.0.0.1:8086"));
         // command.arg("--host-resolver-rules=\"MAP * ~NOTFOUND , EXCLUDE 127.0.0.1\"");
 
 

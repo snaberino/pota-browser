@@ -137,7 +137,7 @@ impl ProxyConfig {
                     Ok(proxy_config)
                 }
                 Err(e) => {
-                    eprintln!("Error while checking the proxy: {}", e);
+                    eprintln!("Error while checking the proxy: {}", e); // debugging
                     Err(e)
                 }
             }
