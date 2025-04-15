@@ -1,11 +1,7 @@
-.obsidian
-.vscode
 .idea
-target
+.obsidian
+/target
 chromium_profiles
-Cargo.lock
 chromium_profiles.json
-proxy_config.json
 custom_browsers.json
-fingerprint manager.md
-Untitled.md
+proxies_config.json
