@@ -36,19 +36,19 @@ impl ProxyServer {
         println!("Listening on {}", listener.local_addr().unwrap());
 
         loop {
-            // Declaring the listener to accept incoming connections
+            // Accepts incoming connections
             let (mut client_socket, client_addr) = listener.accept().await?;
-            println!("Connessione in entrata da: {}", client_addr);
+            println!("Incoming connection from: {}", client_addr);
 
             let tokio_profile = profile.clone();
             tokio::spawn(async move {
-                // Reading the initial request from the client
+                // Reads the initial request from the client
                 // (ex. "CONNECT target:port HTTP/1.1")
                 let mut buffer = [0u8; 1024];
                 let n = match client_socket.read(&mut buffer).await {
                     Ok(n) if n > 0 => n,
                     _ => {
-                        eprintln!("Errore nella lettura dalla connessione del client");
+                        eprintln!("Error while reading connection response from client");
                         return;
                     }
                 };
@@ -58,24 +58,24 @@ impl ProxyServer {
                 let request_line = match lines.next() {
                     Some(line) => line,
                     None => {
-                        eprintln!("Richiesta vuota ricevuta dal client");
+                        eprintln!("Empty request from client");
                         return;
                     }
                 };
 
-                // Il comando CONNECT dovrebbe essere della forma "CONNECT target:port HTTP/1.1"
+                // The command CONNECT should be like "CONNECT target:port HTTP/1.1"
                 let parts: Vec<&str> = request_line.split_whitespace().collect();
                 if parts.len() < 3 {
-                    eprintln!("Formato della richiesta non valido: {}", request_line);
+                    eprintln!("Invalid format request: {}", request_line);
                     return;
                 }
                 let target_addr = parts[1];
-                println!("Richiesta di connessione a: {}", target_addr);
+                println!("Connection request to: {}", target_addr);
 
-                // Specifica l'indirizzo del proxy remoto che richiede autenticazione
+                // Remote proxy address
                 let remote_proxy_addr = format!("{}:{}", tokio_profile.proxy.host.as_str(), tokio_profile.proxy.port);
 
-                // Tenta di connettersi al proxy remoto
+                // Connection to the remote proxy
                 match TcpStream::connect(remote_proxy_addr.clone()).await {
                     Ok(mut remote_socket) => {
                         // Basic Authentication Handler
@@ -84,44 +84,44 @@ impl ProxyServer {
                         let credentials = format!("{}:{}", username, password);
                         let auth_base64 = general_purpose::STANDARD.encode(credentials);
 
-                        // Costruisce la richiesta CONNECT da inoltrare al proxy remoto
+                        // Builds the CONNECT request to send to the remote proxy
                         let connect_req = format!(
                             "CONNECT {} HTTP/1.1\r\nHost: {}\r\nProxy-Authorization: Basic {}\r\n\r\n",
                             target_addr, target_addr, auth_base64
                         );
                         if let Err(e) = remote_socket.write_all(connect_req.as_bytes()).await {
-                            eprintln!("Errore nell'invio del comando CONNECT al proxy remoto: {}", e);
+                            eprintln!("Error sending CONNECT command to the remote proxy: {}", e);
                             return;
                         }
 
-                        // Legge la risposta dal proxy remoto
+                        // Reads the response from the remote proxy
                         let mut remote_buffer = [0u8; 1024];
                         let n = match remote_socket.read(&mut remote_buffer).await {
                             Ok(n) if n > 0 => n,
                             _ => {
-                                eprintln!("Nessuna risposta dal proxy remoto");
+                                eprintln!("No response from the remote proxy");
                                 return;
                             }
                         };
                         let response_str = String::from_utf8_lossy(&remote_buffer[..n]);
-                        println!("Risposta dal proxy remoto: {}", response_str);
+                        println!("Response from the remote proxy: {}", response_str);
 
-                        // Verifica che la risposta indichi che la connessione è stata stabilita
+                        // Checks whether the response indicates the connection was successful
                         if !response_str.starts_with("HTTP/1.1 200") {
-                            eprintln!("Il proxy remoto ha rifiutato la connessione o l'autenticazione è fallita");
-                            // Inoltra eventualmente la risposta al client per informarlo
+                            eprintln!("The remote proxy refused the connection or authentication failed");
+                            // Optionally forwards the response to the client to inform it
                             let _ = client_socket.write_all(&remote_buffer[..n]).await;
                             return;
                         }
 
-                        // Invia una risposta al client (Chrome) per confermare l'avvenuta connessione
+                        // Sends a response to the client (Chrome) confirming the connection was established
                         let client_response = b"HTTP/1.1 200 Connection established\r\n\r\n";
                         if let Err(e) = client_socket.write_all(client_response).await {
-                            eprintln!("Errore nell'invio della risposta al client: {}", e);
+                            eprintln!("Error sending response to client: {}", e);
                             return;
                         }
 
-                        // Avvia il forwarding bidirezionale tra il client e il proxy remoto
+                        // Starts bidirectional forwarding between the client and the remote proxy
                         let (mut client_reader, mut client_writer) = client_socket.into_split();
                         let (mut remote_reader, mut remote_writer) = remote_socket.into_split();
 
@@ -131,17 +131,17 @@ impl ProxyServer {
                         match tokio::try_join!(client_to_remote, remote_to_client) {
                             Ok((bytes_c2r, bytes_r2c)) => {
                                 println!(
-                                    "Connessione chiusa: {} bytes inviati -> {}, {} bytes ricevuti <- {}",
+                                    "Connection closed: {} bytes sent -> {}, {} bytes received <- {}",
                                     bytes_c2r, target_addr, bytes_r2c, target_addr
                                 );
                             }
                             Err(e) => {
-                                eprintln!("Errore durante il forwarding: {}", e);
+                                eprintln!("Error during forwarding: {}", e);
                             }
                         }
                     }
                     Err(e) => {
-                        eprintln!("Impossibile connettersi al proxy remoto {}: {}", remote_proxy_addr, e);
+                        eprintln!("Unable to connect to remote proxy {}: {}", remote_proxy_addr, e);
                     }
                 }
             });

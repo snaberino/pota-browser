@@ -108,9 +108,7 @@ impl ProxyManager {
     }
 
     pub fn start_check_proxy(&self, index: u32, proxy_config: ProxyConfig) -> Result<(), Box<dyn std::error::Error>> {
-
         let mut manager = self.clone();
-
 
         tokio::spawn(async move {
             match manager.check_proxy(proxy_config).await {
@@ -143,8 +141,6 @@ impl ProxyManager {
             .timeout(Duration::from_secs(10))
             .build()
             .map_err(|e| e.to_string())?;
-
-        // println!("{}", proxy_url); // debugging
 
         match client.get("https://ipinfo.io/json").send().await {
             Ok(response) => {

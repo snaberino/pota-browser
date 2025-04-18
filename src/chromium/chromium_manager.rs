@@ -160,6 +160,23 @@ impl ChromiumManager {
         Ok(())
     }
 
+    fn chromium_command_line(&mut self, profile: &ChromiumProfile) -> Command {
+        let mut command = Command::new(&profile.browser_path);
+        if (profile.headless == true) {
+            command.arg("--headless");
+        }
+        command.arg(format!("--user-data-dir={}", profile.profile_path));
+        command.arg(format!("--remote-debugging-port={}", profile.debugging_port));
+        command.arg("--no-first-run");
+        command.arg("--no-default-browser-check");
+        command.arg("--hide-crash-restore-bubble");
+        command.arg("--disable-features=Translate,LensStandalone,LensOverlay,LensOverlayTranslateButton,LensOverlayContextualSearchBox,LensOverlayLatencyOptimizations,LensOverlayImageContextMenuActions,LensOverlayTranslateLanguages,LensOverlaySidePanelOpenInNewTab");
+        if profile.headless {
+            command.arg("--headless");
+        }
+        command
+    }
+
     pub fn stop(&mut self, name: &str) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(mut child) = get_chromium_processes().lock().unwrap().remove(name) {
             let _ = child.kill();
