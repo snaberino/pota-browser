@@ -1,7 +1,7 @@
-pub mod new_profile_section;
-pub mod single_profile_section;
-pub mod profile_list_section;
-pub mod active_profiles_section;
-pub mod proxy_manager_section;
-pub mod saved_proxies_section;
-pub mod render_util;
+pub mod new_profile;
+pub mod custom_browser;
+pub mod logger;
+
+pub mod profiles_list;
+pub mod new_proxy;
+pub mod proxies_list;

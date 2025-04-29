@@ -1,3 +1,2 @@
-pub mod chromium;
-mod websocket;
-mod driver;
+pub mod chromium_manager;
+mod cdp;
