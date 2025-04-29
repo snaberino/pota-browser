@@ -123,7 +123,7 @@ impl ProfilesListPanel {
                 ui.label((1+index).to_string());
                 ui.label(&profile.name);
                 if ui.button("Start").clicked() {
-                    if let Err(e) = chromium_manager.start(profile) {
+                    if let Err(e) = chromium_manager.start(profile.clone()) {
                         logger.add_log("Profiles List".to_string(), format!("Failed to start profile: {}. Error: {}", &profile.name, e));
                     } else {
                         logger.add_log("Profiles List".to_string(), format!("Started profile: {}", &profile.name));

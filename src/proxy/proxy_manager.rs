@@ -3,6 +3,24 @@ use std::io::Write;
 use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use reqwest::{ Client, Proxy };
+use std::collections::HashMap;
+
+#[derive(Clone)]
+struct LanguageSettings {
+    lang: &'static str,
+    accept_language: &'static str,
+}
+
+// Define a map to store the language settings for each country
+fn get_language_settings(country: &str) -> Option<LanguageSettings> {
+    match country {
+        "US" => Some(LanguageSettings { lang: "en-US", accept_language: "en-US,en;q=0.9" }),
+        "IT" => Some(LanguageSettings { lang: "it-IT", accept_language: "it-IT,it;q=0.9" }),
+        "FR" => Some(LanguageSettings { lang: "fr-FR", accept_language: "fr-FR,fr;q=0.9" }),
+        // Add more countries as needed
+        _ => None,
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub struct ProxyConfig {
@@ -16,6 +34,9 @@ pub struct ProxyConfig {
 
     pub country: String,
     pub ip: String,
+
+    pub lang: String,
+    pub accept_lang: String
 }
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ProxyManager {
@@ -34,6 +55,8 @@ impl ProxyConfig {
             password: String::new(),
             country: String::new(),
             ip: String::new(),
+            lang: String::new(),
+            accept_lang: String::new(),
         }
     }
 
@@ -48,6 +71,8 @@ impl ProxyConfig {
             password,
             country: String::new(),
             ip: String::new(),
+            lang: String::new(),
+            accept_lang: String::new(),
         }
     }
 
@@ -146,13 +171,20 @@ impl ProxyManager {
             Ok(response) => {
                 if let Ok(json) = response.json::<serde_json::Value>().await {
                     // Saving the last IP
-                    // println!("{:?}", json); // debugging
                     let ip = json["ip"].as_str().unwrap_or("Unknown IP").to_string();
                     proxy_config.ip = ip.clone();
 
                     // Saving the country
                     let country: String = json["country"].as_str().unwrap_or("Unknown Country").to_string();
                     proxy_config.country = country.clone();
+
+                    // Set language and accept_language based on country
+                    if let Some(lang_settings) = get_language_settings(&proxy_config.country) {
+                        proxy_config.lang = lang_settings.lang.to_string();
+                        proxy_config.accept_lang = lang_settings.accept_language.to_string();
+                    } else {
+                        println!("Warning: No language settings found for country {}", proxy_config.country);
+                    }
 
                     Ok(proxy_config)
                 } else {

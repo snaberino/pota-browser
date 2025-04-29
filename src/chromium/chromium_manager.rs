@@ -23,7 +23,8 @@ pub struct ChromiumProfile {
     pub debugging_port: u32,
     pub headless: bool,
     pub webrtc: String,
-    pub proxy: ProxyConfig
+    pub proxy: ProxyConfig,
+    pub proxy_server_port: u16
 }
 
 #[derive(Serialize, Deserialize)]
@@ -43,16 +44,11 @@ impl ChromiumProfile {
             headless: false,
             webrtc: "default".to_string(),
             proxy: ProxyConfig::default(),
+            proxy_server_port: 0,
         }
     }
 
     /// Creates a new ChromiumProfile with the specified parameters.
-    /// 
-    /// # Arguments
-    /// * `profiles` - A list of existing profiles to determine the next ID.
-    /// * `name` - The name of the new profile.
-    /// * `profile_path` - The path to the profile's data directory.
-    /// * `browser_path` - The path to the Chromium browser executable.
     pub fn new_profile(profiles: Vec<ChromiumProfile>, name: String, profile_path: String, browser_path: String) -> Self {
         Self {
             id: Self::get_next_id(profiles),
@@ -67,13 +63,11 @@ impl ChromiumProfile {
             headless: false,
             webrtc: "default".to_string(),
             proxy: ProxyConfig::default(),
+            proxy_server_port: 0,
         }
     }
 
     /// Determines the next available ID for a new profile.
-    /// 
-    /// # Arguments
-    /// * `profiles` - A list of existing profiles.
     fn get_next_id(profiles: Vec<ChromiumProfile>) -> u32 {
         let mut max_id = 0;
         for profile in profiles {
@@ -85,9 +79,6 @@ impl ChromiumProfile {
     }
 
     /// Generates the default profile path based on the profile name.
-    /// 
-    /// # Arguments
-    /// * `profile_name` - The name of the profile.
     fn default_profile_path(profile_name: String) -> String {
         let potabrowser_dir = std::env::current_dir().unwrap();
         let mut profile_dir = potabrowser_dir.clone();
@@ -95,6 +86,7 @@ impl ChromiumProfile {
         profile_dir.push(profile_name);
         profile_dir.to_str().unwrap().to_string()
     }
+
 }
 
 impl ChromiumManager {
@@ -146,34 +138,50 @@ impl ChromiumManager {
         Ok(())
     }
 
-    pub fn start(&mut self, profile: &ChromiumProfile) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn start(&mut self, mut profile: ChromiumProfile) -> Result<(), Box<dyn std::error::Error>> {
         let proxy_server = ProxyServer::new();
 
-        let _ = proxy_server.start_server_proxy(profile);
+        profile.proxy_server_port = self.get_available_port();
 
-        let child = Command::new(&profile.browser_path)
-            .arg(format!("--user-data-dir={}", profile.profile_path))
-            .arg("--proxy-server=http://127.0.0.1:8086")
-            .spawn()?;
+        let _ = proxy_server.start_server_proxy(&profile);        
+
+        let child = self.chromium_command_line(&profile).spawn()?;
+
         let mut processes = get_chromium_processes().lock().unwrap();
         processes.insert(profile.name.clone(), child);
         Ok(())
     }
 
+    fn get_available_port(&mut self) -> u16 {
+        let udp_socket = std::net::UdpSocket::bind(("127.0.0.1", 0)).unwrap();
+        udp_socket.local_addr().unwrap().port()
+    }
+
     fn chromium_command_line(&mut self, profile: &ChromiumProfile) -> Command {
-        let mut command = Command::new(&profile.browser_path);
-        if (profile.headless == true) {
-            command.arg("--headless");
-        }
+
+        let mut command: Command = Command::new(&profile.browser_path);
+
         command.arg(format!("--user-data-dir={}", profile.profile_path));
         command.arg(format!("--remote-debugging-port={}", profile.debugging_port));
+        command.arg(format!("--proxy-server=http://127.0.0.1:{}", profile.proxy_server_port));
         command.arg("--no-first-run");
         command.arg("--no-default-browser-check");
         command.arg("--hide-crash-restore-bubble");
         command.arg("--disable-features=Translate,LensStandalone,LensOverlay,LensOverlayTranslateButton,LensOverlayContextualSearchBox,LensOverlayLatencyOptimizations,LensOverlayImageContextMenuActions,LensOverlayTranslateLanguages,LensOverlaySidePanelOpenInNewTab");
+
+        command.arg(format!("--lang={}", profile.proxy.lang));
+        command.arg(format!("--accept-lang={}", profile.proxy.accept_lang));
+
+
         if profile.headless {
             command.arg("--headless");
         }
+
+        if profile.webrtc == "disabled" {
+            command.arg("--webrtc-ip-handling-policy=disable_non_proxied_udp");
+            command.arg("--force-webrtc-ip-handling-policy");
+        }
+
         command
     }
 

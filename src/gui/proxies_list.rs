@@ -4,6 +4,7 @@ use crate::proxy::proxy_manager::{ProxyManager, ProxyConfig};
 
 pub struct ProxiesListPanel {
     selected_proxy: ProxyConfig,
+    show_username: bool,
     show_password: bool,
 }
 
@@ -11,6 +12,7 @@ impl ProxiesListPanel {
     pub fn new() -> Self {
         Self {
             selected_proxy: ProxyConfig::default(),
+            show_username: false,
             show_password: false,
         }
     }
@@ -26,7 +28,13 @@ impl ProxiesListPanel {
             ui.label("Protocol");
             ui.label("Host");
             ui.label("Port");
-            ui.label("Username");
+            ui.horizontal(|ui| {
+                ui.label("Username");
+                if ui.selectable_label(self.show_username, "👁").clicked()  {
+                    self.show_username = !self.show_username;
+                };
+            });
+            
             ui.horizontal(|ui| {
                 ui.label("Password");
                 if ui.selectable_label(self.show_password, "👁").clicked() {
@@ -43,13 +51,16 @@ impl ProxiesListPanel {
                 ui.label(&proxy.protocol);
                 ui.label(&proxy.host);
                 ui.label(&proxy.port);
-                ui.label(&proxy.username);
+                if self.show_username {
+                    ui.label(&proxy.username);
+                } else {
+                    ui.label("********");
+                }
                 if self.show_password {
                     ui.label(&proxy.password);
                 } else {
                     ui.label("********");
                 }
-                // ui.label(&proxy.password);
                 if ui.button("Remove").clicked() {
                     proxy_to_remove.push(index);
 
