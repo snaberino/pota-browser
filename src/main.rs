@@ -95,7 +95,9 @@ impl eframe::App for PotaBrowser {
 async fn main() -> eframe::Result<()> {
     let mut options = eframe::NativeOptions::default();
     options.viewport.resizable = Some(true);
+    options.viewport.inner_size = Some(egui::vec2(1200.0, 800.0));
     options.centered = true;
+    
     eframe::run_native(
         "pota browser",
         options,

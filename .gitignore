@@ -5,3 +5,4 @@ chromium_profiles
 chromium_profiles.json
 custom_browsers.json
 proxies_config.json
+Cargo.lock
