@@ -3,6 +3,8 @@ use crate::gui::logger::LoggerPanel;
 use crate::chromium::chromium_manager::{ChromiumManager, ChromiumProfile};
 use crate::proxy::proxy_manager::ProxyManager;
 
+use eframe::egui::Vec2;
+
 pub struct ProfilesListPanel {
     selected_profile: ChromiumProfile,
     id_to_edit: u32,
@@ -107,10 +109,10 @@ impl ProfilesListPanel {
         }
 
         let mut profile_to_remove = Vec::new();
-        // let mut profile_to_remove = Vec::u;
 
         egui::Grid::new("profiles_list_grid").show(ui, |ui| {
             ui.label("ID");
+            ui.label("Status");
             ui.label("Profile Name");
             ui.label("Start");
             ui.label("Stop");
@@ -118,11 +120,28 @@ impl ProfilesListPanel {
             ui.label("Settings");
             ui.end_row();
 
-            let iter_profiles = chromium_manager.profiles.clone();
-            for (index, profile) in iter_profiles.iter().enumerate() {
+            for (index, profile) in chromium_manager.profiles.clone().iter().enumerate() {
                 ui.label((1+index).to_string());
+
+                let status_color = if profile.is_running {
+                    egui::Color32::from_rgb(0, 128, 0) // Green
+                } else {
+                    egui::Color32::RED // Red
+                };
+                let size = 10.0;
+
+                let (rect, _) = ui.allocate_exact_size(Vec2::splat(size), egui::Sense::hover());
+                ui.painter().circle_filled(rect.center(), size / 2.0, status_color);
+        
+
                 ui.label(&profile.name);
                 if ui.button("Start").clicked() {
+                    self.selected_profile = profile.clone();
+                    self.selected_profile.is_running = true;
+                    chromium_manager.update(profile.id, self.selected_profile.clone()).unwrap();
+                    
+                    // self.save_changes_status = true;
+                    // profile.is_running = true; 
                     if let Err(e) = chromium_manager.start(profile.clone()) {
                         logger.add_log("Profiles List".to_string(), format!("Failed to start profile: {}. Error: {}", &profile.name, e));
                     } else {
@@ -133,6 +152,9 @@ impl ProfilesListPanel {
                     if let Err(e) = chromium_manager.stop(profile.name.as_str()) {
                         logger.add_log("Profiles List".to_string(), format!("Failed to stop profile: {}. Error: {}", &profile.name, e));
                     } else {
+                        self.selected_profile = profile.clone();
+                        self.selected_profile.is_running = false;
+                        chromium_manager.update(profile.id, self.selected_profile.clone()).unwrap();
                         logger.add_log("Profiles List".to_string(), format!("Stopped profile: {}", &profile.name));
                     }
                 }
@@ -159,6 +181,7 @@ impl ProfilesListPanel {
         if self.save_changes_status == true {
             chromium_manager.update( self.id_to_edit, self.selected_profile.clone()).unwrap();
             logger.add_log("Profiles List".to_string(), format!("Updated profile: {}", self.id_to_edit));
+            self.save_changes_status = false; 
         }
     }
 }

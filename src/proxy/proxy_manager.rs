@@ -2,8 +2,8 @@ use std::fs::File;
 use std::io::Write;
 use std::time::Duration;
 use serde::{Deserialize, Serialize};
-use reqwest::{ Client, Proxy };
-use std::collections::HashMap;
+// use reqwest::{ Client, Proxy };
+// use std::collections::HashMap;
 
 #[derive(Clone)]
 struct LanguageSettings {
@@ -149,49 +149,140 @@ impl ProxyManager {
         Ok(())
     }
 
+    // pub async fn check_proxy(&self, mut proxy_config: ProxyConfig) -> Result<ProxyConfig, Box<dyn std::error::Error>> {
+    //     println!("Checking proxy index");
+
+    //     let proxy_url = format!(
+    //         "{}://{}:{}@{}:{}",
+    //         proxy_config.protocol,
+    //         proxy_config.username,
+    //         proxy_config.password,
+    //         proxy_config.host,
+    //         proxy_config.port,
+    //     );
+    //     println!("{}", proxy_url);
+    //     let client = Client::builder()
+    //         .proxy(Proxy::all(proxy_url).map_err(|e| e.to_string())?)
+    //         .timeout(Duration::from_secs(10))
+    //         .build()
+    //         .map_err(|e| e.to_string())?;
+
+    //     match client.get("https://ipinfo.io/json").send().await {
+    //         Ok(response) => {
+    //             if let Ok(json) = response.json::<serde_json::Value>().await {
+    //                 // Saving the last IP
+    //                 let ip = json["ip"].as_str().unwrap_or("Unknown IP").to_string();
+    //                 proxy_config.ip = ip.clone();
+
+    //                 // Saving the country
+    //                 let country: String = json["country"].as_str().unwrap_or("Unknown Country").to_string();
+    //                 proxy_config.country = country.clone();
+
+    //                 // Set language and accept_language based on country
+    //                 if let Some(lang_settings) = get_language_settings(&proxy_config.country) {
+    //                     proxy_config.lang = lang_settings.lang.to_string();
+    //                     proxy_config.accept_lang = lang_settings.accept_language.to_string();
+    //                 } else {
+    //                     println!("Warning: No language settings found for country {}", proxy_config.country);
+    //                 }
+
+    //                 Ok(proxy_config)
+    //             } else {
+    //                 Err("Error parsing the response.".into())
+    //             }
+    //         }
+    //         Err(e) => Err(e.to_string().into()),
+    //     }
+    // }
+
+
     pub async fn check_proxy(&self, mut proxy_config: ProxyConfig) -> Result<ProxyConfig, Box<dyn std::error::Error>> {
-        println!("Checking proxy index");
-
-        let proxy_url = format!(
-            "{}://{}:{}@{}:{}",
-            proxy_config.protocol,
-            proxy_config.username,
-            proxy_config.password,
-            proxy_config.host,
-            proxy_config.port,
-        );
-        println!("{}", proxy_url);
-        let client = Client::builder()
-            .proxy(Proxy::all(proxy_url).map_err(|e| e.to_string())?)
-            .timeout(Duration::from_secs(10))
-            .build()
-            .map_err(|e| e.to_string())?;
-
-        match client.get("https://ipinfo.io/json").send().await {
-            Ok(response) => {
-                if let Ok(json) = response.json::<serde_json::Value>().await {
-                    // Saving the last IP
-                    let ip = json["ip"].as_str().unwrap_or("Unknown IP").to_string();
-                    proxy_config.ip = ip.clone();
-
-                    // Saving the country
-                    let country: String = json["country"].as_str().unwrap_or("Unknown Country").to_string();
-                    proxy_config.country = country.clone();
-
-                    // Set language and accept_language based on country
-                    if let Some(lang_settings) = get_language_settings(&proxy_config.country) {
-                        proxy_config.lang = lang_settings.lang.to_string();
-                        proxy_config.accept_lang = lang_settings.accept_language.to_string();
-                    } else {
-                        println!("Warning: No language settings found for country {}", proxy_config.country);
-                    }
-
-                    Ok(proxy_config)
-                } else {
-                    Err("Error parsing the response.".into())
+        println!("Checking proxy: {}", proxy_config.name);
+    
+        let client = if proxy_config.protocol == "http" {
+            // HTTPS proxy via reqwest + CONNECT
+            let proxy_url = format!(
+                "{}://{}:{}@{}:{}",
+                proxy_config.protocol,
+                proxy_config.username,
+                proxy_config.password,
+                proxy_config.host,
+                proxy_config.port,
+            );
+    
+            reqwest::Client::builder()
+                .proxy(reqwest::Proxy::all(&proxy_url)?)
+                .timeout(Duration::from_secs(10))
+                .build()?
+        } else if proxy_config.protocol == "socks5" {
+            // SOCKS5 proxy (reqwest non supporta SOCKS5 + auth nativamente)
+            // workaround: usare tokio-socks per stabilire connessione e leggere a mano
+    
+            use tokio_socks::tcp::Socks5Stream;
+            // use tokio::net::TcpStream;
+            use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    
+            let host = "ipinfo.io";
+            let port = 443;
+    
+            let socks_stream = Socks5Stream::connect_with_password(
+                (
+                    proxy_config.host.as_str(),
+                    proxy_config.port.parse::<u16>().unwrap_or(1080),
+                ),
+                (host, port),
+                &proxy_config.username,
+                &proxy_config.password,
+            )
+            .await?;
+    
+            let mut stream = tokio_native_tls::TlsConnector::from(
+                native_tls::TlsConnector::new().unwrap()
+            )
+            .connect(host, socks_stream.into_inner())
+            .await?;
+    
+            // Minimal GET request
+            let request = b"GET /json HTTP/1.1\r\nHost: ipinfo.io\r\nConnection: close\r\n\r\n";
+            stream.write_all(request).await?;
+    
+            let mut buf = Vec::new();
+            stream.read_to_end(&mut buf).await?;
+    
+            let response_str = String::from_utf8_lossy(&buf);
+            let json_start = response_str.find("{").unwrap_or(0);
+            let json_part = &response_str[json_start..];
+    
+            if let Ok(json) = serde_json::from_str::<serde_json::Value>(json_part) {
+                proxy_config.ip = json["ip"].as_str().unwrap_or("Unknown IP").to_string();
+                proxy_config.country = json["country"].as_str().unwrap_or("Unknown Country").to_string();
+    
+                if let Some(lang_settings) = get_language_settings(&proxy_config.country) {
+                    proxy_config.lang = lang_settings.lang.to_string();
+                    proxy_config.accept_lang = lang_settings.accept_language.to_string();
                 }
+    
+                return Ok(proxy_config);
+            } else {
+                return Err("Failed to parse JSON from SOCKS5 response".into());
             }
-            Err(e) => Err(e.to_string().into()),
+        } else {
+            return Err(format!("Unsupported proxy protocol: {}", proxy_config.protocol).into());
+        };
+    
+        // Common HTTP flow (for HTTPS only)
+        let res = client.get("https://ipinfo.io/json").send().await?;
+        let json = res.json::<serde_json::Value>().await?;
+    
+        proxy_config.ip = json["ip"].as_str().unwrap_or("Unknown IP").to_string();
+        proxy_config.country = json["country"].as_str().unwrap_or("Unknown Country").to_string();
+    
+        if let Some(lang_settings) = get_language_settings(&proxy_config.country) {
+            proxy_config.lang = lang_settings.lang.to_string();
+            proxy_config.accept_lang = lang_settings.accept_language.to_string();
         }
+    
+        Ok(proxy_config)
     }
+    
 }

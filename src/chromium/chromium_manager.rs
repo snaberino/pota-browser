@@ -24,7 +24,8 @@ pub struct ChromiumProfile {
     pub headless: bool,
     pub webrtc: String,
     pub proxy: ProxyConfig,
-    pub proxy_server_port: u16
+    pub proxy_server_port: u16,
+    pub is_running: bool,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -45,6 +46,7 @@ impl ChromiumProfile {
             webrtc: "default".to_string(),
             proxy: ProxyConfig::default(),
             proxy_server_port: 0,
+            is_running: false,
         }
     }
 
@@ -64,6 +66,7 @@ impl ChromiumProfile {
             webrtc: "default".to_string(),
             proxy: ProxyConfig::default(),
             proxy_server_port: 0,
+            is_running: false,
         }
     }
 
@@ -149,6 +152,7 @@ impl ChromiumManager {
 
         let mut processes = get_chromium_processes().lock().unwrap();
         processes.insert(profile.name.clone(), child);
+
         Ok(())
     }
 
