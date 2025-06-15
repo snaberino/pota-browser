@@ -86,6 +86,7 @@ impl ProfilesListPanel {
                             egui::ComboBox::from_id_salt("proxy")
                                 .selected_text(self.selected_profile.proxy.name.clone())
                                 .show_ui(ui, |ui| {
+                                    ui.selectable_value(&mut self.selected_profile.proxy, crate::proxy::proxy_manager::ProxyConfig::default(), "none");
                                     for proxy in proxy_manager.proxies.iter() {
                                         ui.selectable_value(&mut self.selected_profile.proxy, proxy.clone(), &proxy.name);
                                     }

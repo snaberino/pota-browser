@@ -26,8 +26,8 @@ impl NewProxyPanel {
 
     pub fn ui(&mut self, ui: &mut egui::Ui, logger: &mut LoggerPanel, proxy_manager: &mut ProxyManager) {
         ui.heading("Add proxy");
-        // Add your UI elements here
-        egui::Grid::new("new_proxy").show(ui, |ui| {
+        // New proxy UI elements here
+        egui::Grid::new("new_proxy").min_col_width(100.0).show(ui, |ui| {
             ui.label("Name");
             ui.label("Protocol");
             ui.label("Host");

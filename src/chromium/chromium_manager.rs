@@ -142,12 +142,14 @@ impl ChromiumManager {
     }
 
     pub fn start(&mut self, mut profile: ChromiumProfile) -> Result<(), Box<dyn std::error::Error>> {
-        let proxy_server = ProxyServer::new();
+        if profile.proxy.name != "" {
+            let proxy_server = ProxyServer::new();
 
-        profile.proxy_server_port = self.get_available_port();
+            profile.proxy_server_port = self.get_available_port();
 
-        let _ = proxy_server.start_server_proxy(&profile);        
-
+            let _ = proxy_server.start_server_proxy(&profile);   
+        }
+     
         let child = self.chromium_command_line(&profile).spawn()?;
 
         let mut processes = get_chromium_processes().lock().unwrap();
@@ -166,8 +168,8 @@ impl ChromiumManager {
         let mut command: Command = Command::new(&profile.browser_path);
 
         command.arg(format!("--user-data-dir={}", profile.profile_path));
-        command.arg(format!("--remote-debugging-port={}", profile.debugging_port));
-        command.arg(format!("--proxy-server=http://127.0.0.1:{}", profile.proxy_server_port));
+        // command.arg(format!("--remote-debugging-port={}", profile.debugging_port));
+        
         command.arg("--no-first-run");
         command.arg("--no-default-browser-check");
         command.arg("--hide-crash-restore-bubble");
@@ -176,11 +178,15 @@ impl ChromiumManager {
         command.arg(format!("--lang={}", profile.proxy.lang));
         command.arg(format!("--accept-lang={}", profile.proxy.accept_lang));
 
-
+        // Proxy config
+        if profile.proxy.name != "" {
+            command.arg(format!("--proxy-server=http://127.0.0.1:{}", profile.proxy_server_port));
+        }
+        // Headless config
         if profile.headless {
             command.arg("--headless");
         }
-
+        // WebRTC config
         if profile.webrtc == "disabled" {
             command.arg("--webrtc-ip-handling-policy=disable_non_proxied_udp");
             command.arg("--force-webrtc-ip-handling-policy");
