@@ -168,7 +168,7 @@ impl ChromiumManager {
         let mut command: Command = Command::new(&profile.browser_path);
 
         command.arg(format!("--user-data-dir={}", profile.profile_path));
-        // command.arg(format!("--remote-debugging-port={}", profile.debugging_port));
+
         
         command.arg("--no-first-run");
         command.arg("--no-default-browser-check");
@@ -177,6 +177,11 @@ impl ChromiumManager {
 
         command.arg(format!("--lang={}", profile.proxy.lang));
         command.arg(format!("--accept-lang={}", profile.proxy.accept_lang));
+
+        // Debugging port config
+        if profile.debugging_port > 0 {
+            command.arg(format!("--remote-debugging-port={}", profile.debugging_port));
+        }
 
         // Proxy config
         if profile.proxy.name != "" {
